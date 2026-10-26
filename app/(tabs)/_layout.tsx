@@ -1,6 +1,6 @@
 import { SymbolView } from 'expo-symbols';
-import { Tabs } from 'expo-router';
-import type { ColorValue } from 'react-native';
+import { Link, Tabs } from 'expo-router';
+import { Pressable, type ColorValue } from 'react-native';
 
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
@@ -19,6 +19,25 @@ function tabIcon(ios: string, material: string) {
   return TabIcon;
 }
 
+function SettingsButton() {
+  const colorScheme = useColorScheme();
+
+  return (
+    <Link href="/settings" asChild>
+      <Pressable style={{ marginRight: 15 }} accessibilityLabel="Settings">
+        {({ pressed }) => (
+          <SymbolView
+            name={{ ios: 'gearshape', android: 'settings', web: 'settings' }}
+            size={25}
+            tintColor={Colors[colorScheme].text}
+            style={{ opacity: pressed ? 0.5 : 1 }}
+          />
+        )}
+      </Pressable>
+    </Link>
+  );
+}
+
 export default function TabLayout() {
   const colorScheme = useColorScheme();
 
@@ -29,6 +48,7 @@ export default function TabLayout() {
         // Disable the static render of the header on web
         // to prevent a hydration error in React Navigation v6.
         headerShown: useClientOnlyValue(false, true),
+        headerRight: () => <SettingsButton />,
       }}>
       <Tabs.Screen
         name="index"

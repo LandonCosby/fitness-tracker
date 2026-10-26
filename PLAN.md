@@ -16,8 +16,8 @@ Expo SDK 58 app using Expo Router. Four tabs: Workouts, Exercises, Nutrition and
 | 2 | Lint and typecheck pass | Done |
 | 3 | Commit the four-tab layout | Done |
 | 4 | Data layer (`expo-sqlite`) | Done |
-| 4b | Settings screen with the lb/kg switch | Next |
-| 5 | Exercises tab | Not started |
+| 4b | Settings screen with the lb/kg switch | Done |
+| 5 | Exercises tab | Next |
 | 6 | Workouts tab | Not started |
 | 7 | Nutrition tab | Not started |
 | 8 | Progress tab | Not started |
@@ -55,8 +55,9 @@ Every table except `settings` also gets `created_at`, `updated_at` and `deleted_
 
 ## 4b. Settings screen
 
-- Turn the template `app/modal.tsx` into a Settings screen, opened from a gear icon in the tab header.
-- Add an lb/kg switch that saves with `setWeightUnit()`. A missing setting means lb.
+- `app/settings.tsx` (formerly the template's `modal.tsx`) opens as a modal from the gear icon in every tab header.
+- The lb/kg switch saves with `setWeightUnit()`. A missing setting means lb.
+- `hooks/useWeightUnit.tsx` loads the unit once and shares it through `WeightUnitProvider` in `app/_layout.tsx`. Screens call `useWeightUnit()` to read or change it, and every screen updates when it changes.
 - Nutrition targets (step 7) will be added to this screen later.
 
 ### Sync later
@@ -94,7 +95,7 @@ These conventions cost little now and avoid a migration if sync is added:
 
 ## 9. Cleanup
 
-Remove `components/EditScreenInfo.tsx` and (once every tab is built) `components/PlaceholderScreen.tsx`. `app/modal.tsx` stays, because it becomes the Settings screen in step 4b.
+`components/EditScreenInfo.tsx` was removed in step 4b. Still to remove: `components/ExternalLink.tsx` and `components/StyledText.tsx` (now unused, unless a later step needs them), and `components/PlaceholderScreen.tsx` once every tab is built.
 
 ## 10. Builds
 

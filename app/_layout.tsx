@@ -7,6 +7,7 @@ import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import { migrateDbIfNeeded } from '@/db/migrations';
+import { WeightUnitProvider } from '@/hooks/useWeightUnit';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -14,7 +15,7 @@ export {
 } from 'expo-router';
 
 export const unstable_settings = {
-  // Ensure that reloading on `/modal` keeps a back button present.
+  // Ensure that reloading on `/settings` keeps a back button present.
   anchor: '(tabs)',
 };
 
@@ -49,12 +50,14 @@ function RootLayoutNav() {
 
   return (
     <SQLiteProvider databaseName="fitness.db" onInit={migrateDbIfNeeded}>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-        </Stack>
-      </ThemeProvider>
+      <WeightUnitProvider>
+        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <Stack>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="settings" options={{ presentation: 'modal', title: 'Settings' }} />
+          </Stack>
+        </ThemeProvider>
+      </WeightUnitProvider>
     </SQLiteProvider>
   );
 }
