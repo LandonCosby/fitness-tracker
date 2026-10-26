@@ -1,59 +1,113 @@
 import { Link, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { useCallback, useState } from 'react';
-import { FlatList, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { SymbolView } from 'expo-symbols';
+import { useCallback, useState, type ReactNode } from 'react';
+import { FlatList, Pressable, StyleSheet } from 'react-native';
 
 import Chip from '@/components/Chip';
 import { Text, TextInput, View, useThemeColor } from '@/components/Themed';
-import { EQUIPMENT_LABELS, MUSCLE_GROUPS, MUSCLE_LABELS, type MuscleGroup } from '@/db/exerciseTags';
+import {
+  EQUIPMENT,
+  EQUIPMENT_LABELS,
+  MUSCLE_GROUPS,
+  MUSCLE_LABELS,
+  type Equipment,
+  type MuscleGroup,
+} from '@/db/exerciseTags';
 import { listExercises, type ExerciseListItem } from '@/db/exercises';
+
+function toggle<T>(list: readonly T[], value: T): T[] {
+  return list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
+}
 
 export default function ExercisesScreen() {
   const db = useSQLiteContext();
   const [search, setSearch] = useState('');
-  const [muscle, setMuscle] = useState<MuscleGroup | null>(null);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [muscles, setMuscles] = useState<MuscleGroup[]>([]);
+  const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [exercises, setExercises] = useState<ExerciseListItem[] | null>(null);
   const border = useThemeColor({}, 'border');
+  const muted = useThemeColor({}, 'muted');
+
+  const filterCount = muscles.length + equipment.length;
 
   // Reloads on focus too, so adds, edits and deletes show up when coming back.
   useFocusEffect(
     useCallback(() => {
       let cancelled = false;
-      listExercises(db, { search, muscle }).then((rows) => {
+      listExercises(db, { search, muscles, equipment }).then((rows) => {
         if (!cancelled) setExercises(rows);
       });
       return () => {
         cancelled = true;
       };
-    }, [db, search, muscle])
+    }, [db, search, muscles, equipment])
   );
 
   return (
     <View style={styles.container}>
-      <View style={styles.filters}>
-        <TextInput
-          value={search}
-          onChangeText={setSearch}
-          placeholder="Search exercises"
-          autoCorrect={false}
-          clearButtonMode="while-editing"
-          returnKeyType="search"
-        />
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.chips}
-          keyboardShouldPersistTaps="handled">
-          <Chip label="All" selected={muscle === null} onPress={() => setMuscle(null)} />
-          {MUSCLE_GROUPS.map((group) => (
-            <Chip
-              key={group}
-              label={MUSCLE_LABELS[group]}
-              selected={muscle === group}
-              onPress={() => setMuscle(muscle === group ? null : group)}
-            />
-          ))}
-        </ScrollView>
+      <View style={styles.header}>
+        <View style={styles.searchRow}>
+          <TextInput
+            style={styles.search}
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Search exercises"
+            autoCorrect={false}
+            clearButtonMode="while-editing"
+            returnKeyType="search"
+          />
+          <AdvancedButton
+            open={showAdvanced}
+            count={filterCount}
+            onPress={() => setShowAdvanced((open) => !open)}
+          />
+        </View>
+
+        {showAdvanced && (
+          <View style={[styles.panel, { borderColor: border }]}>
+            <FilterGroup title="Muscle group">
+              {MUSCLE_GROUPS.map((group) => (
+                <Chip
+                  key={group}
+                  label={MUSCLE_LABELS[group]}
+                  selected={muscles.includes(group)}
+                  onPress={() => setMuscles((current) => toggle(current, group))}
+                />
+              ))}
+            </FilterGroup>
+
+            <FilterGroup title="Equipment">
+              {EQUIPMENT.map((item) => (
+                <Chip
+                  key={item}
+                  label={EQUIPMENT_LABELS[item]}
+                  selected={equipment.includes(item)}
+                  onPress={() => setEquipment((current) => toggle(current, item))}
+                />
+              ))}
+            </FilterGroup>
+
+            {filterCount > 0 && (
+              <Pressable
+                onPress={() => {
+                  setMuscles([]);
+                  setEquipment([]);
+                }}
+                hitSlop={8}
+                style={styles.clear}>
+                <Text style={{ color: muted }}>Clear all</Text>
+              </Pressable>
+            )}
+          </View>
+        )}
+
+        {exercises && (
+          <Text style={[styles.resultCount, { color: muted }]}>
+            {exercises.length} {exercises.length === 1 ? 'exercise' : 'exercises'}
+          </Text>
+        )}
       </View>
 
       <FlatList
@@ -71,6 +125,60 @@ export default function ExercisesScreen() {
         }
         renderItem={({ item }) => <ExerciseRow exercise={item} />}
       />
+    </View>
+  );
+}
+
+function AdvancedButton({
+  open,
+  count,
+  onPress,
+}: {
+  open: boolean;
+  count: number;
+  onPress: () => void;
+}) {
+  const tint = useThemeColor({}, 'tint');
+  const text = useThemeColor({}, 'text');
+  const background = useThemeColor({}, 'background');
+  const border = useThemeColor({}, 'border');
+  const active = open || count > 0;
+
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={count > 0 ? `Advanced search, ${count} filters on` : 'Advanced search'}
+      accessibilityState={{ expanded: open }}
+      style={({ pressed }) => [
+        styles.advancedButton,
+        { borderColor: active ? tint : border },
+        pressed && styles.pressed,
+      ]}>
+      <SymbolView
+        name={{
+          ios: 'line.3.horizontal.decrease',
+          android: 'filter_list',
+          web: 'filter_list',
+        }}
+        size={18}
+        tintColor={active ? tint : text}
+      />
+      <Text style={[styles.advancedLabel, active && { color: tint }]}>Advanced</Text>
+      {count > 0 && (
+        <View style={[styles.countBadge, { backgroundColor: tint }]}>
+          <Text style={[styles.countLabel, { color: background }]}>{count}</Text>
+        </View>
+      )}
+    </Pressable>
+  );
+}
+
+function FilterGroup({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <View style={styles.group}>
+      <Text style={styles.groupTitle}>{title}</Text>
+      <View style={styles.chips}>{children}</View>
     </View>
   );
 }
@@ -102,14 +210,67 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  filters: {
+  header: {
     paddingHorizontal: 16,
     paddingTop: 12,
     gap: 10,
   },
-  chips: {
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
-    paddingBottom: 10,
+  },
+  search: {
+    flex: 1,
+  },
+  advancedButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+  },
+  advancedLabel: {
+    fontSize: 15,
+  },
+  countBadge: {
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    paddingHorizontal: 5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  countLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  panel: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    gap: 14,
+  },
+  group: {
+    gap: 8,
+  },
+  groupTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  chips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  clear: {
+    alignSelf: 'flex-end',
+  },
+  resultCount: {
+    fontSize: 13,
+    paddingBottom: 6,
   },
   row: {
     flexDirection: 'row',

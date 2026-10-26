@@ -56,9 +56,21 @@ function likePattern(search: string): string {
   return `%${search.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
 }
 
+export type ExerciseFilters = {
+  search?: string;
+  /** Matches the primary muscle against any of these. Empty means all. */
+  muscles?: readonly MuscleGroup[];
+  /** Matches any of these. Empty means all. */
+  equipment?: readonly Equipment[];
+};
+
+function inList(column: string, values: readonly string[]): string {
+  return `${column} IN (${values.map(() => '?').join(', ')})`;
+}
+
 export async function listExercises(
   db: SQLiteDatabase,
-  filters: { search?: string; muscle?: MuscleGroup | null } = {}
+  filters: ExerciseFilters = {}
 ): Promise<ExerciseListItem[]> {
   const conditions = ['deleted_at IS NULL'];
   const params: string[] = [];
@@ -68,9 +80,13 @@ export async function listExercises(
     conditions.push("name LIKE ? ESCAPE '\\'");
     params.push(likePattern(search));
   }
-  if (filters.muscle) {
-    conditions.push('primary_muscle = ?');
-    params.push(filters.muscle);
+  if (filters.muscles?.length) {
+    conditions.push(inList('primary_muscle', filters.muscles));
+    params.push(...filters.muscles);
+  }
+  if (filters.equipment?.length) {
+    conditions.push(inList('equipment', filters.equipment));
+    params.push(...filters.equipment);
   }
 
   return db.getAllAsync<ExerciseListItem>(

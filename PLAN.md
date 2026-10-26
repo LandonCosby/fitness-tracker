@@ -75,7 +75,7 @@ These conventions cost little now and avoid a migration if sync is added:
   - `db/seedExercises.ts` imports the library at startup. After regenerating the JSON, bump `BUILT_IN_SEED_VERSION` so existing installs update.
   - Built-in IDs are `builtin:<dataset id>`, so they're the same on every device. Built-in exercises are read-only.
   - Dataset muscles are mapped to 11 groups (`db/exerciseTags.ts`). Lats, middle back, lower back, traps and neck count as Back. Abductors and adductors count as Glutes.
-- **List** (`app/(tabs)/exercises.tsx`): search by name, plus a filter for one primary muscle group.
+- **List** (`app/(tabs)/exercises.tsx`): search by name. An **Advanced** button next to the search box opens Muscle group and Equipment filters. You can pick several options in each: options in the same category match any of them, and the two categories must both match. The muscle filter checks the primary muscle only. The button shows how many filters are on, and the list shows the result count.
 - **Detail** (`app/exercise/[id].tsx`): muscles, equipment, level and instructions. Steps 6 and 8 will add history and personal records here.
 - **Custom exercises** (`app/exercise-form.tsx`): add with the + in the header, and edit or delete from the detail screen. Names must be unique (ignoring case). Deleting is a soft delete.
 - Migration 2 adds `level`, `category` and `instructions` columns to `exercises`. Queries are in `db/exercises.ts`.
