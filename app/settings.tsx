@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet } from 'react-native';
 
+import ModalScreen from '@/components/ModalScreen';
 import { Text, TextInput, View, useThemeColor } from '@/components/Themed';
 import { caloriesFromMacros } from '@/db/nutrition';
 import { getNutritionTargets, setNutritionTarget, type NutritionTargets } from '@/db/settings';
@@ -66,71 +67,73 @@ export default function SettingsScreen() {
     : 0;
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      keyboardShouldPersistTaps="handled"
-      automaticallyAdjustKeyboardInsets>
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Weight unit</Text>
-        <View style={[styles.segmented, { borderColor: tint }]} accessibilityRole="radiogroup">
-          {WEIGHT_UNITS.map((option) => {
-            const selected = option === unit;
-            return (
-              <Pressable
-                key={option}
-                onPress={() => setUnit(option)}
-                accessibilityRole="radio"
-                accessibilityState={{ checked: selected }}
-                style={({ pressed }) => [
-                  styles.segment,
-                  selected && { backgroundColor: tint },
-                  pressed && !selected && styles.pressed,
-                ]}>
-                <Text style={[styles.segmentLabel, selected && { color: background }]}>
-                  {UNIT_LABELS[option]}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-        <Text style={[styles.hint, { color: muted }]}>
-          Weights are shown in this unit. Sets you&apos;ve already logged keep the unit they were
-          entered in, so switching never changes your history.
-        </Text>
-      </View>
-
-      {targets && (
+    <ModalScreen title="Settings">
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets>
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Daily nutrition targets</Text>
-          <View style={styles.grid}>
-            {TARGET_FIELDS.map((field) => (
-              <View key={field.name} style={styles.targetField}>
-                <Text style={[styles.targetLabel, { color: muted }]}>
-                  {field.label} ({field.unit})
-                </Text>
-                <TextInput
-                  value={targets[field.name]}
-                  onChangeText={(text) => changeTarget(field.name, text)}
-                  placeholder="No target"
-                  keyboardType="decimal-pad"
-                  maxLength={6}
-                  accessibilityLabel={`${field.label} target in ${field.unit}`}
-                />
-              </View>
-            ))}
+          <Text style={styles.sectionTitle}>Weight unit</Text>
+          <View style={[styles.segmented, { borderColor: tint }]} accessibilityRole="radiogroup">
+            {WEIGHT_UNITS.map((option) => {
+              const selected = option === unit;
+              return (
+                <Pressable
+                  key={option}
+                  onPress={() => setUnit(option)}
+                  accessibilityRole="radio"
+                  accessibilityState={{ checked: selected }}
+                  style={({ pressed }) => [
+                    styles.segment,
+                    selected && { backgroundColor: tint },
+                    pressed && !selected && styles.pressed,
+                  ]}>
+                  <Text style={[styles.segmentLabel, selected && { color: background }]}>
+                    {UNIT_LABELS[option]}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
           <Text style={[styles.hint, { color: muted }]}>
-            Leave a field empty for no target.
-            {macroCalories > 0 &&
-              ` Your protein, carbs and fat targets add up to ${macroCalories.toLocaleString()} kcal.`}
+            Weights are shown in this unit. Sets you&apos;ve already logged keep the unit they were
+            entered in, so switching never changes your history.
           </Text>
         </View>
-      )}
 
-      {/* Use a light status bar on iOS to account for the black space above the modal */}
-      <StatusBar style={Platform.OS === 'ios' ? 'light' : 'auto'} />
-    </ScrollView>
+        {targets && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Daily nutrition targets</Text>
+            <View style={styles.grid}>
+              {TARGET_FIELDS.map((field) => (
+                <View key={field.name} style={styles.targetField}>
+                  <Text style={[styles.targetLabel, { color: muted }]}>
+                    {field.label} ({field.unit})
+                  </Text>
+                  <TextInput
+                    value={targets[field.name]}
+                    onChangeText={(text) => changeTarget(field.name, text)}
+                    placeholder="No target"
+                    keyboardType="decimal-pad"
+                    maxLength={6}
+                    accessibilityLabel={`${field.label} target in ${field.unit}`}
+                  />
+                </View>
+              ))}
+            </View>
+            <Text style={[styles.hint, { color: muted }]}>
+              Leave a field empty for no target.
+              {macroCalories > 0 &&
+                ` Your protein, carbs and fat targets add up to ${macroCalories.toLocaleString()} kcal.`}
+            </Text>
+          </View>
+        )}
+
+        {/* Use a light status bar on iOS to account for the black space above the modal */}
+        <StatusBar style={Platform.OS === 'ios' ? 'light' : 'auto'} />
+      </ScrollView>
+    </ModalScreen>
   );
 }
 

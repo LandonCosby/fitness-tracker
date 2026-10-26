@@ -125,6 +125,10 @@ These conventions cost little now and avoid a migration if sync is added:
 - **Charts** (`components/charts/`): hand-drawn with `react-native-svg`, which is included in Expo Go. They follow the dataviz skill: one series in the validated blue (`chartSeries` in `constants/Colors.ts`, checked against the app's white and black backgrounds), a 2px line, an end dot with a surface ring, a labelled endpoint, hairline gridlines, clean y-ticks (1K / 2K), and columns at most 24px wide with a 4px rounded top and square base. A readout above each chart shows the latest value, or the touched point while you tap or drag; there's a crosshair on lines and selected-column highlighting on bars. **Show data** under each chart lists every value, so nothing depends on touch.
 - Migration 6 adds `body_weights`, with a unique date among rows that aren't deleted.
 
+## Known platform issues
+
+- **iOS 26 modal headers:** the native title bar on modal screens was drawn over the screen's content, which hid and blocked the search boxes on Add exercises and Add food. Modals now hide the native header (`MODAL` options in `app/_layout.tsx`) and draw their own bar with `components/ModalScreen.tsx` (Close, title, optional right button), so content always starts below it. Use `ModalScreen` for any new modal.
+
 ## 9. Cleanup
 
 Done: `EditScreenInfo`, `ExternalLink`, `StyledText` and `PlaceholderScreen` have been removed.

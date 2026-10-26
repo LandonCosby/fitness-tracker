@@ -1,9 +1,10 @@
-import { Stack, router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Switch } from 'react-native';
 
 import Chip from '@/components/Chip';
+import ModalScreen from '@/components/ModalScreen';
 import { Text, TextInput, View, useThemeColor } from '@/components/Themed';
 import {
   MEALS,
@@ -34,7 +35,12 @@ const decimalOnly = (text: string) => text.replace(/[^0-9.,]/g, '');
 
 // New food (?date=&meal=&name=) or editing a logged entry (?id=).
 export default function FoodEntryScreen() {
-  const params = useLocalSearchParams<{ id?: string; date?: string; meal?: string; name?: string }>();
+  const params = useLocalSearchParams<{
+    id?: string;
+    date?: string;
+    meal?: string;
+    name?: string;
+  }>();
   const { id } = params;
   const db = useSQLiteContext();
   const isEditing = id != null;
@@ -95,7 +101,8 @@ export default function FoodEntryScreen() {
   const save = async () => {
     const trimmed = name.trim();
     if (!trimmed) return setError('Enter a name.');
-    if (caloriesValue == null) return setError('Enter calories, or protein/carbs/fat to work them out.');
+    if (caloriesValue == null)
+      return setError('Enter calories, or protein/carbs/fat to work them out.');
     if (!servingsValue) return setError('Servings must be more than 0.');
 
     const values = {
@@ -138,7 +145,9 @@ export default function FoodEntryScreen() {
     ]);
   };
 
-  if (!loaded) return <View style={styles.container} />;
+  const title = isEditing ? 'Edit entry' : 'New food';
+
+  if (!loaded) return <ModalScreen title={title}>{null}</ModalScreen>;
 
   const totals =
     caloriesValue != null && servingsValue && servingsValue !== 1
@@ -146,126 +155,150 @@ export default function FoodEntryScreen() {
       : null;
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      keyboardShouldPersistTaps="handled"
-      automaticallyAdjustKeyboardInsets>
-      <Stack.Screen options={{ title: isEditing ? 'Edit entry' : 'New food' }} />
-
-      <View style={styles.field}>
-        <Text style={styles.label}>Name</Text>
-        <TextInput
-          value={name}
-          onChangeText={(text) => {
-            setName(text);
-            setError(null);
-          }}
-          placeholder="e.g. Greek yogurt"
-          autoFocus={!isEditing && !params.name}
-          autoCapitalize="sentences"
-        />
-      </View>
-
-      <View style={styles.field}>
-        <Text style={styles.label}>Serving size (optional)</Text>
-        <TextInput
-          value={servingLabel}
-          onChangeText={setServingLabel}
-          placeholder="e.g. 1 cup, 170 g, 1 bar"
-        />
-      </View>
-
-      <View style={styles.field}>
-        <Text style={styles.label}>Per serving</Text>
-        <View style={styles.grid}>
-          <NumberField
-            label="Calories"
-            unit="kcal"
-            value={calories}
-            placeholder={suggestedCalories != null ? String(suggestedCalories) : '0'}
-            onChange={(text) => {
-              setCalories(decimalOnly(text));
+    <ModalScreen title={title}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets>
+        <View style={styles.field}>
+          <Text style={styles.label}>Name</Text>
+          <TextInput
+            value={name}
+            onChangeText={(text) => {
+              setName(text);
               setError(null);
             }}
+            placeholder="e.g. Greek yogurt"
+            autoFocus={!isEditing && !params.name}
+            autoCapitalize="sentences"
           />
-          <NumberField label="Protein" unit="g" value={protein} onChange={(t) => setProtein(decimalOnly(t))} />
-          <NumberField label="Carbs" unit="g" value={carbs} onChange={(t) => setCarbs(decimalOnly(t))} />
-          <NumberField label="Fat" unit="g" value={fat} onChange={(t) => setFat(decimalOnly(t))} />
         </View>
-        {suggestedCalories != null && !calories && (
-          <Text style={[styles.hint, { color: muted }]}>
-            Calories left blank use {suggestedCalories} kcal, worked out from the macros (4 per
-            gram of protein and carbs, 9 per gram of fat).
-          </Text>
-        )}
-      </View>
 
-      <View style={styles.field}>
-        <Text style={styles.label}>Servings eaten</Text>
-        <TextInput
-          style={styles.servingsInput}
-          value={servings}
-          onChangeText={(text) => setServings(decimalOnly(text))}
-          keyboardType="decimal-pad"
-          maxLength={5}
-          selectTextOnFocus
-        />
-        {totals && (
-          <Text style={[styles.hint, { color: muted }]}>
-            Total: {formatCalories(totals.calories)} kcal · P {formatNumber(totals.proteinG)} · C{' '}
-            {formatNumber(totals.carbsG)} · F {formatNumber(totals.fatG)}
-          </Text>
-        )}
-      </View>
-
-      <View style={styles.field}>
-        <Text style={styles.label}>Meal</Text>
-        <View style={styles.chips}>
-          {MEALS.map((m) => (
-            <Chip key={m} label={MEAL_LABELS[m]} selected={meal === m} onPress={() => setMeal(m)} />
-          ))}
+        <View style={styles.field}>
+          <Text style={styles.label}>Serving size (optional)</Text>
+          <TextInput
+            value={servingLabel}
+            onChangeText={setServingLabel}
+            placeholder="e.g. 1 cup, 170 g, 1 bar"
+          />
         </View>
-      </View>
 
-      {!isEditing && (
-        <View style={styles.switchRow}>
-          <View style={styles.switchText}>
-            <Text style={styles.label}>Save to My foods</Text>
-            <Text style={[styles.hint, { color: muted }]}>Log it again later in one tap.</Text>
+        <View style={styles.field}>
+          <Text style={styles.label}>Per serving</Text>
+          <View style={styles.grid}>
+            <NumberField
+              label="Calories"
+              unit="kcal"
+              value={calories}
+              placeholder={suggestedCalories != null ? String(suggestedCalories) : '0'}
+              onChange={(text) => {
+                setCalories(decimalOnly(text));
+                setError(null);
+              }}
+            />
+            <NumberField
+              label="Protein"
+              unit="g"
+              value={protein}
+              onChange={(t) => setProtein(decimalOnly(t))}
+            />
+            <NumberField
+              label="Carbs"
+              unit="g"
+              value={carbs}
+              onChange={(t) => setCarbs(decimalOnly(t))}
+            />
+            <NumberField
+              label="Fat"
+              unit="g"
+              value={fat}
+              onChange={(t) => setFat(decimalOnly(t))}
+            />
           </View>
-          <Switch
-            value={saveToFoods}
-            onValueChange={setSaveToFoods}
-            trackColor={{ true: tint }}
-            accessibilityLabel="Save to My foods"
-          />
+          {suggestedCalories != null && !calories && (
+            <Text style={[styles.hint, { color: muted }]}>
+              Calories left blank use {suggestedCalories} kcal, worked out from the macros (4 per
+              gram of protein and carbs, 9 per gram of fat).
+            </Text>
+          )}
         </View>
-      )}
 
-      {error && <Text style={[styles.error, { color: danger }]}>{error}</Text>}
+        <View style={styles.field}>
+          <Text style={styles.label}>Servings eaten</Text>
+          <TextInput
+            style={styles.servingsInput}
+            value={servings}
+            onChangeText={(text) => setServings(decimalOnly(text))}
+            keyboardType="decimal-pad"
+            maxLength={5}
+            selectTextOnFocus
+          />
+          {totals && (
+            <Text style={[styles.hint, { color: muted }]}>
+              Total: {formatCalories(totals.calories)} kcal · P {formatNumber(totals.proteinG)} · C{' '}
+              {formatNumber(totals.carbsG)} · F {formatNumber(totals.fatG)}
+            </Text>
+          )}
+        </View>
 
-      <Pressable
-        onPress={save}
-        disabled={saving}
-        style={({ pressed }) => [
-          styles.saveButton,
-          { backgroundColor: tint },
-          (pressed || saving) && styles.pressed,
-        ]}>
-        <Text style={[styles.saveLabel, { color: background }]}>
-          {isEditing ? 'Save changes' : `Add to ${MEAL_LABELS[meal]}`}
-        </Text>
-      </Pressable>
+        <View style={styles.field}>
+          <Text style={styles.label}>Meal</Text>
+          <View style={styles.chips}>
+            {MEALS.map((m) => (
+              <Chip
+                key={m}
+                label={MEAL_LABELS[m]}
+                selected={meal === m}
+                onPress={() => setMeal(m)}
+              />
+            ))}
+          </View>
+        </View>
 
-      {isEditing && (
+        {!isEditing && (
+          <View style={styles.switchRow}>
+            <View style={styles.switchText}>
+              <Text style={styles.label}>Save to My foods</Text>
+              <Text style={[styles.hint, { color: muted }]}>Log it again later in one tap.</Text>
+            </View>
+            <Switch
+              value={saveToFoods}
+              onValueChange={setSaveToFoods}
+              trackColor={{ true: tint }}
+              accessibilityLabel="Save to My foods"
+            />
+          </View>
+        )}
+
+        {error && <Text style={[styles.error, { color: danger }]}>{error}</Text>}
+
         <Pressable
-          onPress={confirmDelete}
-          style={({ pressed }) => [styles.deleteButton, { borderColor: danger }, pressed && styles.pressed]}>
-          <Text style={[styles.deleteLabel, { color: danger }]}>Delete entry</Text>
+          onPress={save}
+          disabled={saving}
+          style={({ pressed }) => [
+            styles.saveButton,
+            { backgroundColor: tint },
+            (pressed || saving) && styles.pressed,
+          ]}>
+          <Text style={[styles.saveLabel, { color: background }]}>
+            {isEditing ? 'Save changes' : `Add to ${MEAL_LABELS[meal]}`}
+          </Text>
         </Pressable>
-      )}
-    </ScrollView>
+
+        {isEditing && (
+          <Pressable
+            onPress={confirmDelete}
+            style={({ pressed }) => [
+              styles.deleteButton,
+              { borderColor: danger },
+              pressed && styles.pressed,
+            ]}>
+            <Text style={[styles.deleteLabel, { color: danger }]}>Delete entry</Text>
+          </Pressable>
+        )}
+      </ScrollView>
+    </ModalScreen>
   );
 }
 

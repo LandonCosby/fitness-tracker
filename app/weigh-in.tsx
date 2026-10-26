@@ -4,8 +4,15 @@ import { useCallback, useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet } from 'react-native';
 
 import IconButton from '@/components/IconButton';
+import ModalScreen from '@/components/ModalScreen';
 import { Text, TextInput, View, useThemeColor } from '@/components/Themed';
-import { deleteWeighIn, getWeighIn, listWeighIns, saveWeighIn, type WeighIn } from '@/db/bodyWeight';
+import {
+  deleteWeighIn,
+  getWeighIn,
+  listWeighIns,
+  saveWeighIn,
+  type WeighIn,
+} from '@/db/bodyWeight';
 import { fromDateKey, shiftDateKey, toDateKey } from '@/db/records';
 import { formatWeight } from '@/db/units';
 import { useWeightUnit } from '@/hooks/useWeightUnit';
@@ -73,79 +80,85 @@ export default function WeighInScreen() {
   };
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      keyboardShouldPersistTaps="handled"
-      automaticallyAdjustKeyboardInsets>
-      <View style={styles.dayRow}>
-        <IconButton
-          ios="chevron.left"
-          material="chevron_left"
-          label="Previous day"
-          color="tint"
-          onPress={() => setDate((d) => shiftDateKey(d, -1))}
-        />
-        <Text style={styles.day}>{formatDay(fromDateKey(date).getTime())}</Text>
-        <IconButton
-          ios="chevron.right"
-          material="chevron_right"
-          label="Next day"
-          color="tint"
-          onPress={() => setDate((d) => shiftDateKey(d, 1))}
-          disabled={date >= today}
-        />
-      </View>
-
-      <View style={styles.inputRow}>
-        <TextInput
-          style={styles.input}
-          value={weight}
-          onChangeText={(text) => {
-            setWeight(text.replace(/[^0-9.,]/g, ''));
-            setError(null);
-          }}
-          placeholder="0"
-          keyboardType="decimal-pad"
-          maxLength={6}
-          autoFocus
-          selectTextOnFocus
-          accessibilityLabel={`Body weight in ${unit}`}
-        />
-        <Text style={styles.unit}>{unit}</Text>
-      </View>
-
-      {error && <Text style={{ color: danger }}>{error}</Text>}
-
-      <Pressable
-        onPress={save}
-        disabled={saving}
-        style={({ pressed }) => [styles.button, { backgroundColor: tint }, (pressed || saving) && styles.pressed]}>
-        <Text style={[styles.buttonLabel, { color: background }]}>Save</Text>
-      </Pressable>
-
-      {recent.length > 0 && (
-        <View style={styles.recent}>
-          <Text style={styles.recentTitle}>Recent</Text>
-          {recent.map((entry) => (
-            <View key={entry.id} style={[styles.recentRow, { borderBottomColor: border }]}>
-              <Text style={[styles.recentDate, { color: muted }]}>
-                {formatDay(fromDateKey(entry.date).getTime())}
-              </Text>
-              <Text style={styles.recentValue}>{formatWeight(entry.weight, unit)}</Text>
-              <IconButton
-                ios="trash"
-                material="delete"
-                label={`Delete weigh-in for ${formatDay(fromDateKey(entry.date).getTime())}`}
-                color="muted"
-                size={18}
-                onPress={() => confirmDelete(entry)}
-              />
-            </View>
-          ))}
+    <ModalScreen title="Log weight">
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets>
+        <View style={styles.dayRow}>
+          <IconButton
+            ios="chevron.left"
+            material="chevron_left"
+            label="Previous day"
+            color="tint"
+            onPress={() => setDate((d) => shiftDateKey(d, -1))}
+          />
+          <Text style={styles.day}>{formatDay(fromDateKey(date).getTime())}</Text>
+          <IconButton
+            ios="chevron.right"
+            material="chevron_right"
+            label="Next day"
+            color="tint"
+            onPress={() => setDate((d) => shiftDateKey(d, 1))}
+            disabled={date >= today}
+          />
         </View>
-      )}
-    </ScrollView>
+
+        <View style={styles.inputRow}>
+          <TextInput
+            style={styles.input}
+            value={weight}
+            onChangeText={(text) => {
+              setWeight(text.replace(/[^0-9.,]/g, ''));
+              setError(null);
+            }}
+            placeholder="0"
+            keyboardType="decimal-pad"
+            maxLength={6}
+            autoFocus
+            selectTextOnFocus
+            accessibilityLabel={`Body weight in ${unit}`}
+          />
+          <Text style={styles.unit}>{unit}</Text>
+        </View>
+
+        {error && <Text style={{ color: danger }}>{error}</Text>}
+
+        <Pressable
+          onPress={save}
+          disabled={saving}
+          style={({ pressed }) => [
+            styles.button,
+            { backgroundColor: tint },
+            (pressed || saving) && styles.pressed,
+          ]}>
+          <Text style={[styles.buttonLabel, { color: background }]}>Save</Text>
+        </Pressable>
+
+        {recent.length > 0 && (
+          <View style={styles.recent}>
+            <Text style={styles.recentTitle}>Recent</Text>
+            {recent.map((entry) => (
+              <View key={entry.id} style={[styles.recentRow, { borderBottomColor: border }]}>
+                <Text style={[styles.recentDate, { color: muted }]}>
+                  {formatDay(fromDateKey(entry.date).getTime())}
+                </Text>
+                <Text style={styles.recentValue}>{formatWeight(entry.weight, unit)}</Text>
+                <IconButton
+                  ios="trash"
+                  material="delete"
+                  label={`Delete weigh-in for ${formatDay(fromDateKey(entry.date).getTime())}`}
+                  color="muted"
+                  size={18}
+                  onPress={() => confirmDelete(entry)}
+                />
+              </View>
+            ))}
+          </View>
+        )}
+      </ScrollView>
+    </ModalScreen>
   );
 }
 

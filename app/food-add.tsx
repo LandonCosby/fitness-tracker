@@ -1,11 +1,19 @@
-import { Stack, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useState } from 'react';
-import { Alert, FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet } from 'react-native';
+import {
+  Alert,
+  FlatList,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  StyleSheet,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Chip from '@/components/Chip';
 import IconButton from '@/components/IconButton';
+import ModalScreen from '@/components/ModalScreen';
 import { Text, TextInput, View, useThemeColor } from '@/components/Themed';
 import {
   MEALS,
@@ -99,161 +107,176 @@ export default function FoodAddScreen() {
     setServings(formatNumber(next));
   };
 
-  const preview = selected && validServings ? entryTotals({ ...selected, servings: servingsValue }) : null;
+  const preview =
+    selected && validServings ? entryTotals({ ...selected, servings: servingsValue }) : null;
 
   return (
-    <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: background }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
-      <Stack.Screen options={{ title: `Add to ${MEAL_LABELS[meal]}` }} />
-
-      <View style={styles.header}>
-        <View style={styles.chips}>
-          {MEALS.map((m) => (
-            <Chip key={m} label={MEAL_LABELS[m]} selected={meal === m} onPress={() => setMeal(m)} />
-          ))}
-        </View>
-        <TextInput
-          value={search}
-          onChangeText={setSearch}
-          placeholder="Search my foods"
-          autoCorrect={false}
-          clearButtonMode="while-editing"
-          returnKeyType="search"
-        />
-        <Pressable
-          onPress={() =>
-            router.replace({
-              pathname: '/food-entry',
-              params: { date, meal, name: search.trim() },
-            })
-          }
-          style={({ pressed }) => [styles.newFood, { borderColor: tint }, pressed && styles.pressed]}>
-          <Text style={[styles.newFoodLabel, { color: tint }]}>
-            + New food{search.trim() ? ` "${search.trim()}"` : ''}
-          </Text>
-        </Pressable>
-      </View>
-
-      <FlatList
-        data={foods ?? []}
-        keyExtractor={(item) => item.id}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="on-drag"
-        contentContainerStyle={{ paddingBottom: selected ? 260 : 24 }}
-        ItemSeparatorComponent={() => (
-          <View style={[styles.separator, { backgroundColor: border }]} />
-        )}
-        ListEmptyComponent={
-          foods ? (
-            <Text style={[styles.empty, { color: muted }]}>
-              {search.trim()
-                ? 'No saved foods match.'
-                : 'No saved foods yet. Foods you add are saved here so you can log them again in one tap.'}
-            </Text>
-          ) : undefined
-        }
-        renderItem={({ item }) => (
-          <Pressable
-            onPress={() => {
-              setSelected(item);
-              setServings('1');
-            }}
-            onLongPress={() => confirmDelete(item)}
-            accessibilityHint="Long press to remove from My foods"
-            style={({ pressed }) => [
-              styles.row,
-              selected?.id === item.id && { backgroundColor: card },
-              pressed && styles.pressed,
-            ]}>
-            <View style={styles.rowText}>
-              <Text style={styles.foodName}>{item.name}</Text>
-              <Text style={[styles.foodDetail, { color: muted }]}>
-                {item.servingLabel ?? '1 serving'} · P {formatNumber(item.proteinG)} · C{' '}
-                {formatNumber(item.carbsG)} · F {formatNumber(item.fatG)}
-              </Text>
-            </View>
-            <Text style={styles.foodCalories}>{formatCalories(item.calories)} kcal</Text>
-          </Pressable>
-        )}
-      />
-
-      {selected && (
-        <View
-          style={[
-            styles.sheet,
-            { borderTopColor: border, paddingBottom: Math.max(insets.bottom, 12) },
-          ]}>
-          <View style={styles.sheetHeader}>
-            <Text style={styles.sheetTitle} numberOfLines={1}>
-              {selected.name}
-            </Text>
-            <IconButton ios="xmark" material="close" label="Cancel" color="muted" onPress={() => setSelected(null)} />
-          </View>
-
-          <View style={styles.servingsRow}>
-            <Text style={[styles.servingsLabel, { color: muted }]}>Servings</Text>
-            <IconButton
-              ios="minus.circle"
-              material="remove_circle_outline"
-              label="Fewer servings"
-              color="tint"
-              size={28}
-              onPress={() => stepServings(-SERVING_STEP)}
-            />
-            <TextInput
-              style={styles.servingsInput}
-              value={servings}
-              onChangeText={(text) => setServings(text.replace(/[^0-9.,]/g, ''))}
-              keyboardType="decimal-pad"
-              maxLength={5}
-              selectTextOnFocus
-              accessibilityLabel="Servings"
-            />
-            <IconButton
-              ios="plus.circle"
-              material="add_circle_outline"
-              label="More servings"
-              color="tint"
-              size={28}
-              onPress={() => stepServings(SERVING_STEP)}
-            />
-          </View>
+    <ModalScreen title={`Add to ${MEAL_LABELS[meal]}`}>
+      <KeyboardAvoidingView
+        style={[styles.container, { backgroundColor: background }]}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <View style={styles.header}>
           <View style={styles.chips}>
-            {QUICK_SERVINGS.map((value) => (
+            {MEALS.map((m) => (
               <Chip
-                key={value}
-                label={formatNumber(value)}
-                selected={validServings && servingsValue === value}
-                onPress={() => setServings(formatNumber(value))}
+                key={m}
+                label={MEAL_LABELS[m]}
+                selected={meal === m}
+                onPress={() => setMeal(m)}
               />
             ))}
           </View>
-
-          {preview && (
-            <Text style={[styles.preview, { color: muted }]}>
-              {formatServings(servingsValue, selected.servingLabel)} = {formatCalories(preview.calories)}{' '}
-              kcal · P {formatNumber(preview.proteinG)} · C {formatNumber(preview.carbsG)} · F{' '}
-              {formatNumber(preview.fatG)}
-            </Text>
-          )}
-
+          <TextInput
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Search my foods"
+            autoCorrect={false}
+            clearButtonMode="while-editing"
+            returnKeyType="search"
+          />
           <Pressable
-            onPress={add}
-            disabled={!validServings || saving}
+            onPress={() =>
+              router.replace({
+                pathname: '/food-entry',
+                params: { date, meal, name: search.trim() },
+              })
+            }
             style={({ pressed }) => [
-              styles.button,
-              { backgroundColor: tint },
-              (pressed || !validServings || saving) && styles.pressed,
+              styles.newFood,
+              { borderColor: tint },
+              pressed && styles.pressed,
             ]}>
-            <Text style={[styles.buttonLabel, { color: background }]}>
-              Add to {MEAL_LABELS[meal]}
+            <Text style={[styles.newFoodLabel, { color: tint }]}>
+              + New food{search.trim() ? ` "${search.trim()}"` : ''}
             </Text>
           </Pressable>
         </View>
-      )}
-    </KeyboardAvoidingView>
+
+        <FlatList
+          data={foods ?? []}
+          keyExtractor={(item) => item.id}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          contentContainerStyle={{ paddingBottom: selected ? 260 : 24 }}
+          ItemSeparatorComponent={() => (
+            <View style={[styles.separator, { backgroundColor: border }]} />
+          )}
+          ListEmptyComponent={
+            foods ? (
+              <Text style={[styles.empty, { color: muted }]}>
+                {search.trim()
+                  ? 'No saved foods match.'
+                  : 'No saved foods yet. Foods you add are saved here so you can log them again in one tap.'}
+              </Text>
+            ) : undefined
+          }
+          renderItem={({ item }) => (
+            <Pressable
+              onPress={() => {
+                setSelected(item);
+                setServings('1');
+              }}
+              onLongPress={() => confirmDelete(item)}
+              accessibilityHint="Long press to remove from My foods"
+              style={({ pressed }) => [
+                styles.row,
+                selected?.id === item.id && { backgroundColor: card },
+                pressed && styles.pressed,
+              ]}>
+              <View style={styles.rowText}>
+                <Text style={styles.foodName}>{item.name}</Text>
+                <Text style={[styles.foodDetail, { color: muted }]}>
+                  {item.servingLabel ?? '1 serving'} · P {formatNumber(item.proteinG)} · C{' '}
+                  {formatNumber(item.carbsG)} · F {formatNumber(item.fatG)}
+                </Text>
+              </View>
+              <Text style={styles.foodCalories}>{formatCalories(item.calories)} kcal</Text>
+            </Pressable>
+          )}
+        />
+
+        {selected && (
+          <View
+            style={[
+              styles.sheet,
+              { borderTopColor: border, paddingBottom: Math.max(insets.bottom, 12) },
+            ]}>
+            <View style={styles.sheetHeader}>
+              <Text style={styles.sheetTitle} numberOfLines={1}>
+                {selected.name}
+              </Text>
+              <IconButton
+                ios="xmark"
+                material="close"
+                label="Cancel"
+                color="muted"
+                onPress={() => setSelected(null)}
+              />
+            </View>
+
+            <View style={styles.servingsRow}>
+              <Text style={[styles.servingsLabel, { color: muted }]}>Servings</Text>
+              <IconButton
+                ios="minus.circle"
+                material="remove_circle_outline"
+                label="Fewer servings"
+                color="tint"
+                size={28}
+                onPress={() => stepServings(-SERVING_STEP)}
+              />
+              <TextInput
+                style={styles.servingsInput}
+                value={servings}
+                onChangeText={(text) => setServings(text.replace(/[^0-9.,]/g, ''))}
+                keyboardType="decimal-pad"
+                maxLength={5}
+                selectTextOnFocus
+                accessibilityLabel="Servings"
+              />
+              <IconButton
+                ios="plus.circle"
+                material="add_circle_outline"
+                label="More servings"
+                color="tint"
+                size={28}
+                onPress={() => stepServings(SERVING_STEP)}
+              />
+            </View>
+            <View style={styles.chips}>
+              {QUICK_SERVINGS.map((value) => (
+                <Chip
+                  key={value}
+                  label={formatNumber(value)}
+                  selected={validServings && servingsValue === value}
+                  onPress={() => setServings(formatNumber(value))}
+                />
+              ))}
+            </View>
+
+            {preview && (
+              <Text style={[styles.preview, { color: muted }]}>
+                {formatServings(servingsValue, selected.servingLabel)} ={' '}
+                {formatCalories(preview.calories)} kcal · P {formatNumber(preview.proteinG)} · C{' '}
+                {formatNumber(preview.carbsG)} · F {formatNumber(preview.fatG)}
+              </Text>
+            )}
+
+            <Pressable
+              onPress={add}
+              disabled={!validServings || saving}
+              style={({ pressed }) => [
+                styles.button,
+                { backgroundColor: tint },
+                (pressed || !validServings || saving) && styles.pressed,
+              ]}>
+              <Text style={[styles.buttonLabel, { color: background }]}>
+                Add to {MEAL_LABELS[meal]}
+              </Text>
+            </Pressable>
+          </View>
+        )}
+      </KeyboardAvoidingView>
+    </ModalScreen>
   );
 }
 

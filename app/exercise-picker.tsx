@@ -1,9 +1,10 @@
-import { Stack, router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ExerciseBrowser from '@/components/ExerciseBrowser';
+import ModalScreen from '@/components/ModalScreen';
 import { Text, View, useThemeColor } from '@/components/Themed';
 import { isMuscleGroup } from '@/db/exerciseTags';
 import { deliverPickedExercises } from '@/lib/exercisePicker';
@@ -27,8 +28,7 @@ export default function ExercisePickerScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Stack.Screen options={singleMode ? { title: 'Choose exercise' } : {}} />
+    <ModalScreen title={singleMode ? 'Choose exercise' : 'Add exercises'}>
       <ExerciseBrowser
         initialMuscles={initialMuscles}
         selectedIds={selectedIds}
@@ -46,27 +46,29 @@ export default function ExercisePickerScreen() {
         }}
         bottomInset={singleMode ? 24 : 96}
       />
-      {!singleMode && <View
-        style={[
-          styles.footer,
-          { paddingBottom: Math.max(insets.bottom, 12), borderTopColor: border },
-        ]}>
-        <Pressable
-          onPress={done}
-          disabled={selected.length === 0}
-          style={({ pressed }) => [
-            styles.button,
-            { backgroundColor: tint },
-            (pressed || selected.length === 0) && styles.dimmed,
+      {!singleMode && (
+        <View
+          style={[
+            styles.footer,
+            { paddingBottom: Math.max(insets.bottom, 12), borderTopColor: border },
           ]}>
-          <Text style={[styles.buttonLabel, { color: background }]}>
-            {selected.length === 0
-              ? 'Select exercises'
-              : `Add ${selected.length} ${selected.length === 1 ? 'exercise' : 'exercises'}`}
-          </Text>
-        </Pressable>
-      </View>}
-    </View>
+          <Pressable
+            onPress={done}
+            disabled={selected.length === 0}
+            style={({ pressed }) => [
+              styles.button,
+              { backgroundColor: tint },
+              (pressed || selected.length === 0) && styles.dimmed,
+            ]}>
+            <Text style={[styles.buttonLabel, { color: background }]}>
+              {selected.length === 0
+                ? 'Select exercises'
+                : `Add ${selected.length} ${selected.length === 1 ? 'exercise' : 'exercises'}`}
+            </Text>
+          </Pressable>
+        </View>
+      )}
+    </ModalScreen>
   );
 }
 

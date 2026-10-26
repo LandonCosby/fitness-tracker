@@ -45,6 +45,8 @@ export default function RootLayout() {
   return <RootLayoutNav />;
 }
 
+const MODAL = { presentation: 'modal', headerShown: false } as const;
+
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
 
@@ -54,18 +56,16 @@ function RootLayoutNav() {
         <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
           <Stack>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="settings" options={{ presentation: 'modal', title: 'Settings' }} />
             <Stack.Screen name="exercise/[id]" options={{ title: 'Exercise' }} />
-            <Stack.Screen name="exercise-form" options={{ presentation: 'modal' }} />
-            <Stack.Screen
-              name="exercise-picker"
-              options={{ presentation: 'modal', title: 'Add exercises' }}
-            />
             <Stack.Screen name="workout-form" options={{ title: 'Workout' }} />
             <Stack.Screen name="session/[id]" options={{ title: 'Workout' }} />
-            <Stack.Screen name="food-add" options={{ presentation: 'modal', title: 'Add food' }} />
-            <Stack.Screen name="food-entry" options={{ presentation: 'modal', title: 'Food' }} />
-            <Stack.Screen name="weigh-in" options={{ presentation: 'modal', title: 'Log weight' }} />
+            {/* Modals draw their own title bar with <ModalScreen> (see that file for why). */}
+            <Stack.Screen name="settings" options={MODAL} />
+            <Stack.Screen name="exercise-form" options={MODAL} />
+            <Stack.Screen name="exercise-picker" options={MODAL} />
+            <Stack.Screen name="food-add" options={MODAL} />
+            <Stack.Screen name="food-entry" options={MODAL} />
+            <Stack.Screen name="weigh-in" options={MODAL} />
           </Stack>
         </ThemeProvider>
       </WeightUnitProvider>

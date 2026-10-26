@@ -1,10 +1,11 @@
-import { Stack, router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Switch } from 'react-native';
 
 import { NO_EQUIPMENT_LABEL } from '@/components/Badge';
 import Chip from '@/components/Chip';
+import ModalScreen from '@/components/ModalScreen';
 import { Text, TextInput, View, useThemeColor } from '@/components/Themed';
 import {
   EQUIPMENT,
@@ -105,120 +106,122 @@ export default function ExerciseFormScreen() {
     }
   };
 
-  if (!loaded) return <View style={styles.container} />;
+  const title = isEditing ? 'Edit exercise' : 'New exercise';
+
+  if (!loaded) return <ModalScreen title={title}>{null}</ModalScreen>;
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      keyboardShouldPersistTaps="handled">
-      <Stack.Screen options={{ title: isEditing ? 'Edit exercise' : 'New exercise' }} />
-
-      <View style={styles.field}>
-        <Text style={styles.label}>Name</Text>
-        <TextInput
-          value={name}
-          onChangeText={(text) => {
-            setName(text);
-            setError(null);
-          }}
-          placeholder="e.g. Landmine Press"
-          autoFocus={!isEditing}
-          autoCapitalize="words"
-          returnKeyType="done"
-        />
-      </View>
-
-      <View style={styles.field}>
-        <Text style={styles.label}>Primary muscle</Text>
-        <View style={styles.chips}>
-          {MUSCLE_GROUPS.map((muscle) => (
-            <Chip
-              key={muscle}
-              label={MUSCLE_LABELS[muscle]}
-              selected={primaryMuscle === muscle}
-              onPress={() => {
-                choosePrimary(muscle);
-                setError(null);
-              }}
-            />
-          ))}
+    <ModalScreen title={title}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled">
+        <View style={styles.field}>
+          <Text style={styles.label}>Name</Text>
+          <TextInput
+            value={name}
+            onChangeText={(text) => {
+              setName(text);
+              setError(null);
+            }}
+            placeholder="e.g. Landmine Press"
+            autoFocus={!isEditing}
+            autoCapitalize="words"
+            returnKeyType="done"
+          />
         </View>
-      </View>
 
-      <View style={styles.field}>
-        <Text style={styles.label}>Also works (optional)</Text>
-        <View style={styles.chips}>
-          {MUSCLE_GROUPS.filter((m) => m !== primaryMuscle).map((muscle) => (
-            <Chip
-              key={muscle}
-              label={MUSCLE_LABELS[muscle]}
-              selected={secondaryMuscles.includes(muscle)}
-              onPress={() => toggleSecondary(muscle)}
-            />
-          ))}
+        <View style={styles.field}>
+          <Text style={styles.label}>Primary muscle</Text>
+          <View style={styles.chips}>
+            {MUSCLE_GROUPS.map((muscle) => (
+              <Chip
+                key={muscle}
+                label={MUSCLE_LABELS[muscle]}
+                selected={primaryMuscle === muscle}
+                onPress={() => {
+                  choosePrimary(muscle);
+                  setError(null);
+                }}
+              />
+            ))}
+          </View>
         </View>
-      </View>
 
-      <View style={styles.field}>
-        <Text style={styles.label}>Equipment (optional)</Text>
-        <View style={styles.chips}>
-          {EQUIPMENT.map((item) => (
-            <Chip
-              key={item}
-              label={EQUIPMENT_LABELS[item]}
-              selected={equipment === item}
-              onPress={() => setEquipment(equipment === item ? null : item)}
-            />
-          ))}
+        <View style={styles.field}>
+          <Text style={styles.label}>Also works (optional)</Text>
+          <View style={styles.chips}>
+            {MUSCLE_GROUPS.filter((m) => m !== primaryMuscle).map((muscle) => (
+              <Chip
+                key={muscle}
+                label={MUSCLE_LABELS[muscle]}
+                selected={secondaryMuscles.includes(muscle)}
+                onPress={() => toggleSecondary(muscle)}
+              />
+            ))}
+          </View>
         </View>
-      </View>
 
-      <View style={styles.switchRow}>
-        <View style={styles.switchText}>
-          <Text style={styles.label}>{NO_EQUIPMENT_LABEL}</Text>
-          <Text style={[styles.hint, { color: muted }]}>
-            Can be done at home with nothing, or household items like a chair or wall.
+        <View style={styles.field}>
+          <Text style={styles.label}>Equipment (optional)</Text>
+          <View style={styles.chips}>
+            {EQUIPMENT.map((item) => (
+              <Chip
+                key={item}
+                label={EQUIPMENT_LABELS[item]}
+                selected={equipment === item}
+                onPress={() => setEquipment(equipment === item ? null : item)}
+              />
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.switchRow}>
+          <View style={styles.switchText}>
+            <Text style={styles.label}>{NO_EQUIPMENT_LABEL}</Text>
+            <Text style={[styles.hint, { color: muted }]}>
+              Can be done at home with nothing, or household items like a chair or wall.
+            </Text>
+          </View>
+          <Switch
+            value={noEquipment}
+            onValueChange={setNoEquipment}
+            trackColor={{ true: success }}
+            accessibilityLabel={NO_EQUIPMENT_LABEL}
+          />
+        </View>
+
+        <View style={styles.switchRow}>
+          <View style={styles.switchText}>
+            <Text style={styles.label}>Timed</Text>
+            <Text style={[styles.hint, { color: muted }]}>
+              Log sets in seconds instead of reps, like a plank.
+            </Text>
+          </View>
+          <Switch
+            value={isTimed}
+            onValueChange={setIsTimed}
+            trackColor={{ true: tint }}
+            accessibilityLabel="Timed"
+          />
+        </View>
+
+        {error && <Text style={[styles.error, { color: danger }]}>{error}</Text>}
+
+        <Pressable
+          onPress={save}
+          disabled={saving}
+          style={({ pressed }) => [
+            styles.saveButton,
+            { backgroundColor: tint },
+            (pressed || saving) && styles.pressed,
+          ]}>
+          <Text style={[styles.saveLabel, { color: background }]}>
+            {isEditing ? 'Save changes' : 'Add exercise'}
           </Text>
-        </View>
-        <Switch
-          value={noEquipment}
-          onValueChange={setNoEquipment}
-          trackColor={{ true: success }}
-          accessibilityLabel={NO_EQUIPMENT_LABEL}
-        />
-      </View>
-
-      <View style={styles.switchRow}>
-        <View style={styles.switchText}>
-          <Text style={styles.label}>Timed</Text>
-          <Text style={[styles.hint, { color: muted }]}>
-            Log sets in seconds instead of reps, like a plank.
-          </Text>
-        </View>
-        <Switch
-          value={isTimed}
-          onValueChange={setIsTimed}
-          trackColor={{ true: tint }}
-          accessibilityLabel="Timed"
-        />
-      </View>
-
-      {error && <Text style={[styles.error, { color: danger }]}>{error}</Text>}
-
-      <Pressable
-        onPress={save}
-        disabled={saving}
-        style={({ pressed }) => [
-          styles.saveButton,
-          { backgroundColor: tint },
-          (pressed || saving) && styles.pressed,
-        ]}>
-        <Text style={[styles.saveLabel, { color: background }]}>
-          {isEditing ? 'Save changes' : 'Add exercise'}
-        </Text>
-      </Pressable>
-    </ScrollView>
+        </Pressable>
+      </ScrollView>
+    </ModalScreen>
   );
 }
 
