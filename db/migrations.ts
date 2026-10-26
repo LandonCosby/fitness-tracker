@@ -83,6 +83,66 @@ const migrations: string[] = [
   `
   ALTER TABLE exercises ADD COLUMN no_equipment INTEGER NOT NULL DEFAULT 0;
   `,
+  // 4: workout logging. No released build ever wrote to the workout tables, so they're
+  // rebuilt in their final shape rather than altered.
+  `
+  ALTER TABLE exercises ADD COLUMN is_timed INTEGER NOT NULL DEFAULT 0;
+
+  DROP TABLE sets;
+  DROP TABLE workout_exercises;
+  DROP TABLE sessions;
+  DROP TABLE workouts;
+
+  CREATE TABLE workouts (
+    id TEXT PRIMARY KEY NOT NULL,
+    name TEXT NOT NULL,
+    muscle_groups TEXT NOT NULL DEFAULT '[]',
+    notes TEXT,${RECORD_COLUMNS}
+  );
+
+  CREATE TABLE workout_exercises (
+    id TEXT PRIMARY KEY NOT NULL,
+    workout_id TEXT NOT NULL REFERENCES workouts (id),
+    exercise_id TEXT NOT NULL REFERENCES exercises (id),
+    position INTEGER NOT NULL,
+    target_sets INTEGER NOT NULL,
+    target_reps INTEGER,
+    target_seconds INTEGER,${RECORD_COLUMNS}
+  );
+  CREATE INDEX idx_workout_exercises_workout ON workout_exercises (workout_id, position);
+
+  CREATE TABLE sessions (
+    id TEXT PRIMARY KEY NOT NULL,
+    workout_id TEXT REFERENCES workouts (id),
+    name TEXT NOT NULL,
+    started_at INTEGER NOT NULL,
+    ended_at INTEGER,${RECORD_COLUMNS}
+  );
+  CREATE INDEX idx_sessions_started_at ON sessions (started_at);
+
+  CREATE TABLE session_exercises (
+    id TEXT PRIMARY KEY NOT NULL,
+    session_id TEXT NOT NULL REFERENCES sessions (id),
+    exercise_id TEXT NOT NULL REFERENCES exercises (id),
+    position INTEGER NOT NULL,${RECORD_COLUMNS}
+  );
+  CREATE INDEX idx_session_exercises_session ON session_exercises (session_id, position);
+  CREATE INDEX idx_session_exercises_exercise ON session_exercises (exercise_id);
+
+  CREATE TABLE sets (
+    id TEXT PRIMARY KEY NOT NULL,
+    session_exercise_id TEXT NOT NULL REFERENCES session_exercises (id),
+    exercise_id TEXT NOT NULL REFERENCES exercises (id),
+    set_number INTEGER NOT NULL,
+    reps INTEGER,
+    duration_s INTEGER,
+    weight REAL,
+    unit TEXT NOT NULL CHECK (unit IN ('lb', 'kg')),
+    completed_at INTEGER,${RECORD_COLUMNS}
+  );
+  CREATE INDEX idx_sets_session_exercise ON sets (session_exercise_id, set_number);
+  CREATE INDEX idx_sets_exercise ON sets (exercise_id);
+  `,
 ];
 
 export const DATABASE_VERSION = migrations.length;

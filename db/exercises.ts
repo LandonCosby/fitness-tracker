@@ -1,7 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 import { isEquipment, isMuscleGroup, type Equipment, type MuscleGroup } from './exerciseTags';
-import { newId, now } from './records';
+import { newId, now, parseJsonArray } from './records';
 import type { Exercise } from './types';
 
 export type ExerciseListItem = Pick<
@@ -16,6 +16,7 @@ export type ExerciseDetail = {
   secondaryMuscles: MuscleGroup[];
   equipment: Equipment | null;
   noEquipment: boolean;
+  isTimed: boolean;
   isCustom: boolean;
   level: string | null;
   instructions: string[];
@@ -27,16 +28,8 @@ export type ExerciseInput = {
   secondaryMuscles: MuscleGroup[];
   equipment: Equipment | null;
   noEquipment: boolean;
+  isTimed: boolean;
 };
-
-function parseJsonArray(value: string): unknown[] {
-  try {
-    const parsed = JSON.parse(value);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
 
 function toDetail(row: Exercise): ExerciseDetail {
   return {
@@ -46,6 +39,7 @@ function toDetail(row: Exercise): ExerciseDetail {
     secondaryMuscles: parseJsonArray(row.secondary_muscles).filter(isMuscleGroup),
     equipment: isEquipment(row.equipment) ? row.equipment : null,
     noEquipment: row.no_equipment === 1,
+    isTimed: row.is_timed === 1,
     isCustom: row.is_custom === 1,
     level: row.level,
     instructions: parseJsonArray(row.instructions).filter(
@@ -141,15 +135,16 @@ export async function createExercise(db: SQLiteDatabase, input: ExerciseInput): 
   const timestamp = now();
   await db.runAsync(
     `INSERT INTO exercises
-       (id, name, primary_muscle, secondary_muscles, equipment, no_equipment, is_custom,
+       (id, name, primary_muscle, secondary_muscles, equipment, no_equipment, is_timed, is_custom,
         created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`,
     id,
     input.name.trim(),
     input.primaryMuscle,
     JSON.stringify(input.secondaryMuscles),
     input.equipment,
     input.noEquipment ? 1 : 0,
+    input.isTimed ? 1 : 0,
     timestamp,
     timestamp
   );
@@ -162,13 +157,14 @@ export async function updateExercise(db: SQLiteDatabase, id: string, input: Exer
   await db.runAsync(
     `UPDATE exercises
      SET name = ?, primary_muscle = ?, secondary_muscles = ?, equipment = ?, no_equipment = ?,
-         updated_at = ?
+         is_timed = ?, updated_at = ?
      WHERE id = ? AND is_custom = 1`,
     input.name.trim(),
     input.primaryMuscle,
     JSON.stringify(input.secondaryMuscles),
     input.equipment,
     input.noEquipment ? 1 : 0,
+    input.isTimed ? 1 : 0,
     now(),
     id
   );

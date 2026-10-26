@@ -28,6 +28,7 @@ export default function ExerciseFormScreen() {
   const [secondaryMuscles, setSecondaryMuscles] = useState<MuscleGroup[]>([]);
   const [equipment, setEquipment] = useState<Equipment | null>(null);
   const [noEquipment, setNoEquipment] = useState(false);
+  const [isTimed, setIsTimed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -52,6 +53,7 @@ export default function ExerciseFormScreen() {
       setSecondaryMuscles(exercise.secondaryMuscles);
       setEquipment(exercise.equipment);
       setNoEquipment(exercise.noEquipment);
+      setIsTimed(exercise.isTimed);
       setLoaded(true);
     });
     return () => {
@@ -88,6 +90,7 @@ export default function ExerciseFormScreen() {
         secondaryMuscles: MUSCLE_GROUPS.filter((m) => secondaryMuscles.includes(m)),
         equipment,
         noEquipment,
+        isTimed,
       };
       if (id) {
         await updateExercise(db, id, input);
@@ -183,6 +186,21 @@ export default function ExerciseFormScreen() {
           onValueChange={setNoEquipment}
           trackColor={{ true: success }}
           accessibilityLabel={NO_EQUIPMENT_LABEL}
+        />
+      </View>
+
+      <View style={styles.switchRow}>
+        <View style={styles.switchText}>
+          <Text style={styles.label}>Timed</Text>
+          <Text style={[styles.hint, { color: muted }]}>
+            Log sets in seconds instead of reps, like a plank.
+          </Text>
+        </View>
+        <Switch
+          value={isTimed}
+          onValueChange={setIsTimed}
+          trackColor={{ true: tint }}
+          accessibilityLabel="Timed"
         />
       </View>
 

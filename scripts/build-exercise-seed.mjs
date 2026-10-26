@@ -133,6 +133,21 @@ const NO_EQUIPMENT_IDS = new Set([
   'Platform_Hamstring_Slides', // towel on a smooth floor
 ]);
 
+// Exercises logged in seconds instead of reps: holds and timed efforts. Picked by hand,
+// since many lifts say "hold the bar" without being timed.
+const TIMED_IDS = new Set([
+  'Balance_Board',
+  'Battling_Ropes',
+  'Farmers_Walk',
+  'Isometric_Chest_Squeezes',
+  'Isometric_Neck_Exercise_-_Front_And_Back',
+  'Isometric_Neck_Exercise_-_Sides',
+  'Mountain_Climbers',
+  'Plank',
+  'Plate_Pinch',
+  'Side_Bridge',
+]);
+
 function mapMuscle(name) {
   const group = MUSCLE_MAP[name];
   if (!group) throw new Error(`Unmapped muscle: ${name}`);
@@ -155,8 +170,10 @@ if (!inputPath) {
 const source = JSON.parse(readFileSync(inputPath, 'utf8'));
 
 const sourceIds = new Set(source.map((e) => e.id));
-const unknown = [...NO_EQUIPMENT_IDS].filter((id) => !sourceIds.has(id));
-if (unknown.length) throw new Error(`NO_EQUIPMENT_IDS not in dataset: ${unknown.join(', ')}`);
+for (const [label, ids] of Object.entries({ NO_EQUIPMENT_IDS, TIMED_IDS })) {
+  const unknown = [...ids].filter((id) => !sourceIds.has(id));
+  if (unknown.length) throw new Error(`${label} not in dataset: ${unknown.join(', ')}`);
+}
 
 const exercises = source
   .filter((e) => !EXCLUDED_CATEGORIES.has(e.category))
@@ -173,6 +190,7 @@ const exercises = source
       secondary,
       equipment: mapEquipment(e.equipment),
       noEquipment: NO_EQUIPMENT_IDS.has(e.id),
+      timed: TIMED_IDS.has(e.id),
       level: e.level ?? null,
       category: e.category ?? null,
       instructions: e.instructions ?? [],
@@ -183,4 +201,7 @@ const exercises = source
 const outputPath = join(dirname(fileURLToPath(import.meta.url)), '..', 'db', 'seed', 'exercises.json');
 writeFileSync(outputPath, JSON.stringify(exercises) + '\n');
 const noEquipmentCount = exercises.filter((e) => e.noEquipment).length;
-console.log(`Wrote ${exercises.length} exercises (${noEquipmentCount} no equipment) to ${outputPath}`);
+const timedCount = exercises.filter((e) => e.timed).length;
+console.log(
+  `Wrote ${exercises.length} exercises (${noEquipmentCount} no equipment, ${timedCount} timed) to ${outputPath}`
+);

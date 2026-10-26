@@ -18,8 +18,8 @@ Expo SDK 58 app using Expo Router. Four tabs: Workouts, Exercises, Nutrition and
 | 4 | Data layer (`expo-sqlite`) | Done |
 | 4b | Settings screen with the lb/kg switch | Done |
 | 5 | Exercises tab | Done |
-| 6 | Workouts tab | Next |
-| 7 | Nutrition tab | Not started |
+| 6 | Workouts tab | Done |
+| 7 | Nutrition tab | Next |
 | 8 | Progress tab | Not started |
 | 9 | Remove template leftovers | Not started |
 | 10 | Development or EAS build, if needed | Not started |
@@ -44,10 +44,11 @@ Run `npm run lint` and `npx tsc --noEmit` before marking any step done (see `AGE
 | Table | Columns |
 |-------|---------|
 | `exercises` | `id`, `name`, `primary_muscle`, `secondary_muscles` (JSON), `equipment`, `is_custom` |
-| `workouts` (templates) | `id`, `name`, `body_part`, `notes` |
-| `workout_exercises` | `id`, `workout_id`, `exercise_id`, `position` |
-| `sessions` (a workout performed) | `id`, `workout_id` (nullable), `started_at`, `ended_at` |
-| `sets` | `id`, `session_id`, `exercise_id`, `set_number`, `reps`, `weight`, `unit` |
+| `workouts` (templates) | `id`, `name`, `muscle_groups` (JSON), `notes` |
+| `workout_exercises` | `id`, `workout_id`, `exercise_id`, `position`, `target_sets`, `target_reps`, `target_seconds` |
+| `sessions` (a workout performed) | `id`, `workout_id` (nullable), `name`, `started_at`, `ended_at` |
+| `session_exercises` | `id`, `session_id`, `exercise_id`, `position` |
+| `sets` | `id`, `session_exercise_id`, `exercise_id`, `set_number`, `reps`, `duration_s`, `weight`, `unit`, `completed_at` |
 | `food_entries` | `id`, `date`, `meal`, `name`, `calories`, `protein_g`, `carbs_g`, `fat_g` |
 | `settings` | `key`, `value` (calorie and macro targets, weight unit) |
 
@@ -86,10 +87,18 @@ These conventions cost little now and avoid a migration if sync is added:
 
 ## 6. Workouts
 
-- Create a workout template by body part, choosing exercises from the library.
-- Start a session from a template, or start an empty one.
-- Log sets (reps and weight) during the session, then finish it.
-- Show a history of past sessions.
+- **Tab** (`app/(tabs)/index.tsx`): an in-progress card (or "Start empty workout"), **My workouts** with a Start button on each, and **History**.
+- **Templates** (`app/workout-form.tsx`, queries in `db/workouts.ts`): a name, body parts and an ordered exercise list. Each exercise has a target of sets × reps, or sets × seconds for timed exercises. "Add exercises" opens the picker with the template's body parts already selected. Deleting a template keeps its history, because sessions copy the template's name.
+- **Picker** (`app/exercise-picker.tsx`): the same search and Advanced filters as the Exercises tab (`components/ExerciseBrowser.tsx`), in multi-select mode. It returns the chosen exercises through `lib/exercisePicker.ts`.
+- **Logging** (`app/session/[id].tsx`, queries in `db/sessions.ts`):
+  - Only one workout can be active at a time.
+  - Starting from a template creates the target number of sets for each exercise, pre-filled with last time's weight and reps (converted to the current unit), or the template's targets if there's no history.
+  - Each row shows **Last time**. Values save as you type, and ✓ marks a set done. ✓ needs reps or seconds; weight is optional, for bodyweight exercises.
+  - "+ Add set" copies the last set. Long-press a set number to delete the set. Exercises can be added or removed mid-workout.
+  - **Finish** removes unchecked sets. With nothing checked off, it offers to discard the workout.
+- **Finished workouts** open as a read-only summary with "Delete from history". The exercise detail screen shows the 5 most recent sessions for that exercise.
+- **Timed exercises** are logged in seconds. 10 built-ins are tagged by hand (`TIMED_IDS` in the seed script): Plank, Side Bridge, isometric holds, Farmers Walk and others. Custom exercises have a "Timed" switch. Seed version 3.
+- Migration 4 adds `exercises.is_timed` and rebuilds the workout tables, which no earlier build had written to: `workouts.muscle_groups`, `workout_exercises` targets, `sessions.name`, a new `session_exercises` table, and `sets` with nullable reps and weight, `duration_s` and `completed_at`.
 
 ## 7. Nutrition
 

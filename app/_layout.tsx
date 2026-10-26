@@ -57,6 +57,12 @@ function RootLayoutNav() {
             <Stack.Screen name="settings" options={{ presentation: 'modal', title: 'Settings' }} />
             <Stack.Screen name="exercise/[id]" options={{ title: 'Exercise' }} />
             <Stack.Screen name="exercise-form" options={{ presentation: 'modal' }} />
+            <Stack.Screen
+              name="exercise-picker"
+              options={{ presentation: 'modal', title: 'Add exercises' }}
+            />
+            <Stack.Screen name="workout-form" options={{ title: 'Workout' }} />
+            <Stack.Screen name="session/[id]" options={{ title: 'Workout' }} />
           </Stack>
         </ThemeProvider>
       </WeightUnitProvider>

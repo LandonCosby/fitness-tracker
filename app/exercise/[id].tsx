@@ -7,12 +7,17 @@ import Badge, { NO_EQUIPMENT_LABEL } from '@/components/Badge';
 import { Text, View, useThemeColor } from '@/components/Themed';
 import { EQUIPMENT_LABELS, LEVEL_LABELS, MUSCLE_LABELS } from '@/db/exerciseTags';
 import { deleteExercise, getExercise, type ExerciseDetail } from '@/db/exercises';
+import { getExerciseHistory, type ExerciseHistoryEntry } from '@/db/sessions';
+import { useWeightUnit } from '@/hooks/useWeightUnit';
+import { formatDay, formatSet } from '@/lib/format';
 
 export default function ExerciseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const db = useSQLiteContext();
   // undefined while loading, null if it doesn't exist (or was deleted).
   const [exercise, setExercise] = useState<ExerciseDetail | null | undefined>(undefined);
+  const [history, setHistory] = useState<ExerciseHistoryEntry[]>([]);
+  const { unit } = useWeightUnit();
   const tint = useThemeColor({}, 'tint');
   const danger = useThemeColor({}, 'danger');
   const muted = useThemeColor({}, 'muted');
@@ -21,8 +26,10 @@ export default function ExerciseDetailScreen() {
   useFocusEffect(
     useCallback(() => {
       let cancelled = false;
-      getExercise(db, id).then((row) => {
-        if (!cancelled) setExercise(row);
+      Promise.all([getExercise(db, id), getExerciseHistory(db, id)]).then(([row, entries]) => {
+        if (cancelled) return;
+        setExercise(row);
+        setHistory(entries);
       });
       return () => {
         cancelled = true;
@@ -94,8 +101,28 @@ export default function ExerciseDetailScreen() {
           <Fact label="Equipment" value={EQUIPMENT_LABELS[exercise.equipment]} />
         )}
         {exercise.level && <Fact label="Level" value={LEVEL_LABELS[exercise.level] ?? exercise.level} />}
+        <Fact label="Logged as" value={exercise.isTimed ? 'Time (seconds)' : 'Reps'} />
         {exercise.isCustom && <Fact label="Source" value="Custom exercise" />}
       </View>
+
+      {history.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Recent</Text>
+          {history.map((entry) => (
+            <Link
+              key={entry.sessionId}
+              href={{ pathname: '/session/[id]', params: { id: entry.sessionId } }}
+              asChild>
+              <Pressable style={({ pressed }) => [styles.historyRow, pressed && styles.pressed]}>
+                <Text style={[styles.historyDate, { color: muted }]}>{formatDay(entry.startedAt)}</Text>
+                <Text style={styles.historySets}>
+                  {entry.sets.map((set) => formatSet(set, unit)).join(', ')}
+                </Text>
+              </Pressable>
+            </Link>
+          ))}
+        </View>
+      )}
 
       {exercise.instructions.length > 0 && (
         <View style={styles.section}>
@@ -173,6 +200,15 @@ const styles = StyleSheet.create({
   step: {
     flexDirection: 'row',
     gap: 8,
+  },
+  historyRow: {
+    gap: 2,
+  },
+  historyDate: {
+    fontSize: 13,
+  },
+  historySets: {
+    fontSize: 15,
   },
   stepNumber: {
     fontSize: 15,

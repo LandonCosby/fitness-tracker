@@ -52,10 +52,10 @@ function SettingsButton() {
   return <HeaderIconLink href="/settings" label="Settings" ios="gearshape" material="settings" />;
 }
 
-function ExercisesHeaderButtons() {
+function AddAndSettingsButtons({ href, label }: { href: Href; label: string }) {
   return (
     <View style={{ flexDirection: 'row' }}>
-      <HeaderIconLink href="/exercise-form" label="Add exercise" ios="plus" material="add" />
+      <HeaderIconLink href={href} label={label} ios="plus" material="add" />
       <SettingsButton />
     </View>
   );
@@ -75,14 +75,18 @@ export default function TabLayout() {
       }}>
       <Tabs.Screen
         name="index"
-        options={{ title: 'Workouts', tabBarIcon: tabIcon('dumbbell', 'fitness_center') }}
+        options={{
+          title: 'Workouts',
+          tabBarIcon: tabIcon('dumbbell', 'fitness_center'),
+          headerRight: () => <AddAndSettingsButtons href="/workout-form" label="New workout" />,
+        }}
       />
       <Tabs.Screen
         name="exercises"
         options={{
           title: 'Exercises',
           tabBarIcon: tabIcon('list.bullet', 'list'),
-          headerRight: () => <ExercisesHeaderButtons />,
+          headerRight: () => <AddAndSettingsButtons href="/exercise-form" label="Add exercise" />,
         }}
       />
       <Tabs.Screen

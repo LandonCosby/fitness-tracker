@@ -5,14 +5,14 @@ import { getSetting, setSetting } from './settings';
 import seed from './seed/exercises.json';
 
 // Bump when db/seed/exercises.json changes so existing installs re-import it.
-// 2: added the "No equipment" tag.
-const BUILT_IN_SEED_VERSION = 2;
+// 2: added the "No equipment" tag. 3: added the timed tag.
+const BUILT_IN_SEED_VERSION = 3;
 const SEED_VERSION_KEY = 'exercise_seed_version';
 
 // Built-in IDs are stable across devices, so the same exercise always has the same ID.
 export const BUILT_IN_ID_PREFIX = 'builtin:';
 
-// 11 columns per row keeps each statement well under SQLite's parameter limit.
+// 12 columns per row keeps each statement well under SQLite's parameter limit.
 const ROWS_PER_STATEMENT = 100;
 
 // Inserts the built-in library, or updates it after a seed version bump.
@@ -26,7 +26,7 @@ export async function seedBuiltInExercises(db: SQLiteDatabase) {
   await db.withTransactionAsync(async () => {
     for (let start = 0; start < seed.length; start += ROWS_PER_STATEMENT) {
       const chunk = seed.slice(start, start + ROWS_PER_STATEMENT);
-      const placeholders = chunk.map(() => '(?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?)').join(', ');
+      const placeholders = chunk.map(() => '(?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?)').join(', ');
       const params = chunk.flatMap((e) => [
         BUILT_IN_ID_PREFIX + e.id,
         e.name,
@@ -34,6 +34,7 @@ export async function seedBuiltInExercises(db: SQLiteDatabase) {
         JSON.stringify(e.secondary),
         e.equipment,
         e.noEquipment ? 1 : 0,
+        e.timed ? 1 : 0,
         e.level,
         e.category,
         JSON.stringify(e.instructions),
@@ -44,7 +45,7 @@ export async function seedBuiltInExercises(db: SQLiteDatabase) {
       await db.runAsync(
         `INSERT INTO exercises
            (id, name, primary_muscle, secondary_muscles, equipment, is_custom,
-            no_equipment, level, category, instructions, created_at, updated_at)
+            no_equipment, is_timed, level, category, instructions, created_at, updated_at)
          VALUES ${placeholders}
          ON CONFLICT (id) DO UPDATE SET
            name = excluded.name,
@@ -52,6 +53,7 @@ export async function seedBuiltInExercises(db: SQLiteDatabase) {
            secondary_muscles = excluded.secondary_muscles,
            equipment = excluded.equipment,
            no_equipment = excluded.no_equipment,
+           is_timed = excluded.is_timed,
            level = excluded.level,
            category = excluded.category,
            instructions = excluded.instructions,

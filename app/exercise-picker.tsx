@@ -1,0 +1,90 @@
+import { router, useLocalSearchParams } from 'expo-router';
+import { useMemo, useState } from 'react';
+import { Pressable, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import ExerciseBrowser from '@/components/ExerciseBrowser';
+import { Text, View, useThemeColor } from '@/components/Themed';
+import { isMuscleGroup } from '@/db/exerciseTags';
+import { deliverPickedExercises } from '@/lib/exercisePicker';
+
+// Opened with openExercisePicker(); returns the chosen exercises in the order tapped.
+export default function ExercisePickerScreen() {
+  const { muscles } = useLocalSearchParams<{ muscles?: string }>();
+  const initialMuscles = useMemo(() => (muscles ?? '').split(',').filter(isMuscleGroup), [muscles]);
+  const [selected, setSelected] = useState<string[]>([]);
+  const selectedIds = useMemo(() => new Set(selected), [selected]);
+  const insets = useSafeAreaInsets();
+  const tint = useThemeColor({}, 'tint');
+  const background = useThemeColor({}, 'background');
+  const border = useThemeColor({}, 'border');
+
+  const done = () => {
+    deliverPickedExercises(selected);
+    router.back();
+  };
+
+  return (
+    <View style={styles.container}>
+      <ExerciseBrowser
+        initialMuscles={initialMuscles}
+        selectedIds={selectedIds}
+        onToggle={(exercise) =>
+          setSelected((current) =>
+            current.includes(exercise.id)
+              ? current.filter((id) => id !== exercise.id)
+              : [...current, exercise.id]
+          )
+        }
+        bottomInset={96}
+      />
+      <View
+        style={[
+          styles.footer,
+          { paddingBottom: Math.max(insets.bottom, 12), borderTopColor: border },
+        ]}>
+        <Pressable
+          onPress={done}
+          disabled={selected.length === 0}
+          style={({ pressed }) => [
+            styles.button,
+            { backgroundColor: tint },
+            (pressed || selected.length === 0) && styles.dimmed,
+          ]}>
+          <Text style={[styles.buttonLabel, { color: background }]}>
+            {selected.length === 0
+              ? 'Select exercises'
+              : `Add ${selected.length} ${selected.length === 1 ? 'exercise' : 'exercises'}`}
+          </Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  footer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  button: {
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  buttonLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  dimmed: {
+    opacity: 0.5,
+  },
+});
