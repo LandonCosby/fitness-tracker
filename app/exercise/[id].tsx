@@ -3,6 +3,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet } from 'react-native';
 
+import Badge, { NO_EQUIPMENT_LABEL } from '@/components/Badge';
 import { Text, View, useThemeColor } from '@/components/Themed';
 import { EQUIPMENT_LABELS, LEVEL_LABELS, MUSCLE_LABELS } from '@/db/exerciseTags';
 import { deleteExercise, getExercise, type ExerciseDetail } from '@/db/exercises';
@@ -72,6 +73,15 @@ export default function ExerciseDetailScreen() {
         }}
       />
 
+      {exercise.noEquipment && (
+        <View style={styles.noEquipment}>
+          <Badge label={NO_EQUIPMENT_LABEL} color="success" />
+          <Text style={[styles.noEquipmentHint, { color: muted }]}>
+            Can be done at home with nothing, or household items like a chair or wall.
+          </Text>
+        </View>
+      )}
+
       <View style={styles.facts}>
         <Fact label="Primary muscle" value={MUSCLE_LABELS[exercise.primaryMuscle]} />
         {exercise.secondaryMuscles.length > 0 && (
@@ -134,6 +144,12 @@ const styles = StyleSheet.create({
   },
   headerButton: {
     fontSize: 17,
+  },
+  noEquipment: {
+    gap: 6,
+  },
+  noEquipmentHint: {
+    fontSize: 14,
   },
   facts: {
     gap: 12,

@@ -1,8 +1,9 @@
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Switch } from 'react-native';
 
+import { NO_EQUIPMENT_LABEL } from '@/components/Badge';
 import Chip from '@/components/Chip';
 import { Text, TextInput, View, useThemeColor } from '@/components/Themed';
 import {
@@ -26,12 +27,15 @@ export default function ExerciseFormScreen() {
   const [primaryMuscle, setPrimaryMuscle] = useState<MuscleGroup | null>(null);
   const [secondaryMuscles, setSecondaryMuscles] = useState<MuscleGroup[]>([]);
   const [equipment, setEquipment] = useState<Equipment | null>(null);
+  const [noEquipment, setNoEquipment] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   const tint = useThemeColor({}, 'tint');
   const background = useThemeColor({}, 'background');
   const danger = useThemeColor({}, 'danger');
+  const success = useThemeColor({}, 'success');
+  const muted = useThemeColor({}, 'muted');
 
   useEffect(() => {
     if (!id) return;
@@ -47,6 +51,7 @@ export default function ExerciseFormScreen() {
       setPrimaryMuscle(exercise.primaryMuscle);
       setSecondaryMuscles(exercise.secondaryMuscles);
       setEquipment(exercise.equipment);
+      setNoEquipment(exercise.noEquipment);
       setLoaded(true);
     });
     return () => {
@@ -82,6 +87,7 @@ export default function ExerciseFormScreen() {
         primaryMuscle,
         secondaryMuscles: MUSCLE_GROUPS.filter((m) => secondaryMuscles.includes(m)),
         equipment,
+        noEquipment,
       };
       if (id) {
         await updateExercise(db, id, input);
@@ -165,6 +171,21 @@ export default function ExerciseFormScreen() {
         </View>
       </View>
 
+      <View style={styles.switchRow}>
+        <View style={styles.switchText}>
+          <Text style={styles.label}>{NO_EQUIPMENT_LABEL}</Text>
+          <Text style={[styles.hint, { color: muted }]}>
+            Can be done at home with nothing, or household items like a chair or wall.
+          </Text>
+        </View>
+        <Switch
+          value={noEquipment}
+          onValueChange={setNoEquipment}
+          trackColor={{ true: success }}
+          accessibilityLabel={NO_EQUIPMENT_LABEL}
+        />
+      </View>
+
       {error && <Text style={[styles.error, { color: danger }]}>{error}</Text>}
 
       <Pressable
@@ -202,6 +223,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+  },
+  switchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  switchText: {
+    flex: 1,
+    gap: 2,
+  },
+  hint: {
+    fontSize: 13,
   },
   error: {
     fontSize: 14,

@@ -50,6 +50,89 @@ const EQUIPMENT_MAP = {
   other: 'other',
 };
 
+// Exercises tagged "No equipment": doable at home with nothing, or only household items
+// (floor, wall, chair, couch, stairs, towel). Picked by hand from each exercise's
+// instructions, because the dataset's equipment field can't tell: some "body only"
+// exercises need a pull-up bar or bench. Excludes anything needing gym gear, cones,
+// boxes or a partner.
+const NO_EQUIPMENT_IDS = new Set([
+  // equipment: null
+  'Alternate_Leg_Diagonal_Bound',
+  'Bodyweight_Walking_Lunge',
+  'Carioca_Quick_Step',
+  'Decline_Push-Up', // feet on a chair or couch
+  'Floor_Glute-Ham_Raise', // feet braced under a couch
+  'Kneeling_Arm_Drill',
+  'Linear_3-Part_Start_Technique',
+  'Linear_Acceleration_Wall_Drill', // wall
+  'Mountain_Climbers',
+  'Moving_Claw_Series',
+  'Side_Standing_Long_Jump',
+  // equipment: body only
+  '3_4_Sit-Up',
+  'Air_Bike',
+  'Alternate_Heel_Touchers',
+  'Bench_Dips', // chair
+  'Bent-Knee_Hip_Raise',
+  'Body-Up',
+  'Bodyweight_Squat',
+  'Bottoms_Up',
+  'Butt_Lift_Bridge',
+  'Butt-Ups',
+  'Clock_Push-Up',
+  'Cocoons',
+  'Cross-Body_Crunch',
+  'Crunch_-_Hands_Overhead',
+  'Crunches',
+  'Dead_Bug',
+  'Double_Leg_Butt_Kick',
+  'Elbow_to_Knee',
+  'Fast_Skipping',
+  'Freehand_Jump_Squat',
+  'Frog_Sit-Ups',
+  'Glute_Kickback',
+  'Handstand_Push-Ups', // wall
+  'Incline_Push-Up', // hands on a couch or table
+  'Isometric_Chest_Squeezes',
+  'Isometric_Neck_Exercise_-_Front_And_Back',
+  'Isometric_Neck_Exercise_-_Sides',
+  'Isometric_Wipers',
+  'Jackknife_Sit-Up',
+  'Janda_Sit-Up',
+  'Knee_Tuck_Jump',
+  'Lateral_Bound',
+  'Leg_Lift', // chair for balance
+  'Leg_Pull-In',
+  'Oblique_Crunches',
+  'Oblique_Crunches_-_On_The_Floor',
+  'Plank',
+  'Plyo_Push-up',
+  'Push_Up_to_Side_Plank',
+  'Push-Up_Wide',
+  'Push-Ups_-_Close_Triceps_Position',
+  'Push-Ups_With_Feet_Elevated', // feet on a chair or couch
+  'Pushups',
+  'Pushups_Close_and_Wide_Hand_Positions',
+  'Reverse_Crunch',
+  'Rocket_Jump',
+  'Russian_Twist', // feet under a couch
+  'Scissors_Jump',
+  'Side_Bridge',
+  'Side_Jackknife',
+  'Single_Leg_Butt_Kick',
+  'Single_Leg_Glute_Bridge',
+  'Single-Arm_Push-Up',
+  'Sit-Up', // feet under a couch
+  'Spider_Crawl',
+  'Split_Jump',
+  'Standing_Long_Jump',
+  'Star_Jump',
+  'Step-up_with_Knee_Raise', // stairs
+  'Tuck_Crunch',
+  // equipment: other
+  'Platform_Hamstring_Slides', // towel on a smooth floor
+]);
+
 function mapMuscle(name) {
   const group = MUSCLE_MAP[name];
   if (!group) throw new Error(`Unmapped muscle: ${name}`);
@@ -71,6 +154,10 @@ if (!inputPath) {
 
 const source = JSON.parse(readFileSync(inputPath, 'utf8'));
 
+const sourceIds = new Set(source.map((e) => e.id));
+const unknown = [...NO_EQUIPMENT_IDS].filter((id) => !sourceIds.has(id));
+if (unknown.length) throw new Error(`NO_EQUIPMENT_IDS not in dataset: ${unknown.join(', ')}`);
+
 const exercises = source
   .filter((e) => !EXCLUDED_CATEGORIES.has(e.category))
   .map((e) => {
@@ -85,6 +172,7 @@ const exercises = source
       primary,
       secondary,
       equipment: mapEquipment(e.equipment),
+      noEquipment: NO_EQUIPMENT_IDS.has(e.id),
       level: e.level ?? null,
       category: e.category ?? null,
       instructions: e.instructions ?? [],
@@ -94,4 +182,5 @@ const exercises = source
 
 const outputPath = join(dirname(fileURLToPath(import.meta.url)), '..', 'db', 'seed', 'exercises.json');
 writeFileSync(outputPath, JSON.stringify(exercises) + '\n');
-console.log(`Wrote ${exercises.length} exercises to ${outputPath}`);
+const noEquipmentCount = exercises.filter((e) => e.noEquipment).length;
+console.log(`Wrote ${exercises.length} exercises (${noEquipmentCount} no equipment) to ${outputPath}`);

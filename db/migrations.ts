@@ -79,6 +79,10 @@ const migrations: string[] = [
   ALTER TABLE exercises ADD COLUMN instructions TEXT NOT NULL DEFAULT '[]';
   CREATE INDEX idx_exercises_primary_muscle ON exercises (primary_muscle);
   `,
+  // 3: "No equipment" tag (doable at home with nothing or household items).
+  `
+  ALTER TABLE exercises ADD COLUMN no_equipment INTEGER NOT NULL DEFAULT 0;
+  `,
 ];
 
 export const DATABASE_VERSION = migrations.length;

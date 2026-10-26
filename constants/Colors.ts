@@ -12,6 +12,7 @@ export default {
     border: '#d1d1d6',
     card: '#f2f2f7',
     danger: '#d70015',
+    success: '#248a3d',
   },
   dark: {
     text: '#fff',
@@ -23,5 +24,6 @@ export default {
     border: '#3a3a3c',
     card: '#1c1c1e',
     danger: '#ff6961',
+    success: '#30d158',
   },
 };

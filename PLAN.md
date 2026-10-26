@@ -76,6 +76,10 @@ These conventions cost little now and avoid a migration if sync is added:
   - Built-in IDs are `builtin:<dataset id>`, so they're the same on every device. Built-in exercises are read-only.
   - Dataset muscles are mapped to 11 groups (`db/exerciseTags.ts`). Lats, middle back, lower back, traps and neck count as Back. Abductors and adductors count as Glutes.
 - **List** (`app/(tabs)/exercises.tsx`): search by name. An **Advanced** button next to the search box opens Muscle group and Equipment filters. You can pick several options in each: options in the same category match any of them, and the two categories must both match. The muscle filter checks the primary muscle only. The button shows how many filters are on, and the list shows the result count.
+- **"No equipment" tag:** marks exercises you can do at home with nothing, or only household items (floor, wall, chair, couch, stairs, towel). Pull-up bars, benches, boxes, cones, a partner and small gear (dumbbells, bands) don't count.
+  - 72 built-in exercises were picked by hand from their instructions and listed in `NO_EQUIPMENT_IDS` in the seed script. The dataset's equipment field can't decide this: some "body only" exercises need a pull-up bar.
+  - It appears as a green badge in the list and on the detail screen, and as the first option in the Equipment filter (OR'd with the other equipment options). Custom exercises get it with a switch in the form.
+  - Stored in `exercises.no_equipment` (migration 3). The seed version was bumped to 2 so existing installs get the tags.
 - **Detail** (`app/exercise/[id].tsx`): muscles, equipment, level and instructions. Steps 6 and 8 will add history and personal records here.
 - **Custom exercises** (`app/exercise-form.tsx`): add with the + in the header, and edit or delete from the detail screen. Names must be unique (ignoring case). Deleting is a soft delete.
 - Migration 2 adds `level`, `category` and `instructions` columns to `exercises`. Queries are in `db/exercises.ts`.

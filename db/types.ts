@@ -17,6 +17,8 @@ export type Exercise = RecordColumns & {
   secondary_muscles: string;
   equipment: Equipment | null;
   is_custom: 0 | 1;
+  /** 1 if doable at home with nothing or only household items. */
+  no_equipment: 0 | 1;
   level: string | null;
   category: string | null;
   /** JSON array of instruction steps. */

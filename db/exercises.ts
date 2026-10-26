@@ -6,7 +6,7 @@ import type { Exercise } from './types';
 
 export type ExerciseListItem = Pick<
   Exercise,
-  'id' | 'name' | 'primary_muscle' | 'equipment' | 'is_custom'
+  'id' | 'name' | 'primary_muscle' | 'equipment' | 'is_custom' | 'no_equipment'
 >;
 
 export type ExerciseDetail = {
@@ -15,6 +15,7 @@ export type ExerciseDetail = {
   primaryMuscle: MuscleGroup;
   secondaryMuscles: MuscleGroup[];
   equipment: Equipment | null;
+  noEquipment: boolean;
   isCustom: boolean;
   level: string | null;
   instructions: string[];
@@ -25,6 +26,7 @@ export type ExerciseInput = {
   primaryMuscle: MuscleGroup;
   secondaryMuscles: MuscleGroup[];
   equipment: Equipment | null;
+  noEquipment: boolean;
 };
 
 function parseJsonArray(value: string): unknown[] {
@@ -43,6 +45,7 @@ function toDetail(row: Exercise): ExerciseDetail {
     primaryMuscle: row.primary_muscle,
     secondaryMuscles: parseJsonArray(row.secondary_muscles).filter(isMuscleGroup),
     equipment: isEquipment(row.equipment) ? row.equipment : null,
+    noEquipment: row.no_equipment === 1,
     isCustom: row.is_custom === 1,
     level: row.level,
     instructions: parseJsonArray(row.instructions).filter(
@@ -62,6 +65,11 @@ export type ExerciseFilters = {
   muscles?: readonly MuscleGroup[];
   /** Matches any of these. Empty means all. */
   equipment?: readonly Equipment[];
+  /**
+   * Part of the equipment category: matches exercises tagged "No equipment",
+   * OR'd with `equipment` (e.g. "no equipment or dumbbell").
+   */
+  noEquipment?: boolean;
 };
 
 function inList(column: string, values: readonly string[]): string {
@@ -84,13 +92,20 @@ export async function listExercises(
     conditions.push(inList('primary_muscle', filters.muscles));
     params.push(...filters.muscles);
   }
+  const equipmentOptions: string[] = [];
+  if (filters.noEquipment) {
+    equipmentOptions.push('no_equipment = 1');
+  }
   if (filters.equipment?.length) {
-    conditions.push(inList('equipment', filters.equipment));
+    equipmentOptions.push(inList('equipment', filters.equipment));
     params.push(...filters.equipment);
+  }
+  if (equipmentOptions.length) {
+    conditions.push(`(${equipmentOptions.join(' OR ')})`);
   }
 
   return db.getAllAsync<ExerciseListItem>(
-    `SELECT id, name, primary_muscle, equipment, is_custom
+    `SELECT id, name, primary_muscle, equipment, is_custom, no_equipment
      FROM exercises
      WHERE ${conditions.join(' AND ')}
      ORDER BY name COLLATE NOCASE`,
@@ -126,13 +141,15 @@ export async function createExercise(db: SQLiteDatabase, input: ExerciseInput): 
   const timestamp = now();
   await db.runAsync(
     `INSERT INTO exercises
-       (id, name, primary_muscle, secondary_muscles, equipment, is_custom, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, 1, ?, ?)`,
+       (id, name, primary_muscle, secondary_muscles, equipment, no_equipment, is_custom,
+        created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)`,
     id,
     input.name.trim(),
     input.primaryMuscle,
     JSON.stringify(input.secondaryMuscles),
     input.equipment,
+    input.noEquipment ? 1 : 0,
     timestamp,
     timestamp
   );
@@ -144,12 +161,14 @@ export async function createExercise(db: SQLiteDatabase, input: ExerciseInput): 
 export async function updateExercise(db: SQLiteDatabase, id: string, input: ExerciseInput) {
   await db.runAsync(
     `UPDATE exercises
-     SET name = ?, primary_muscle = ?, secondary_muscles = ?, equipment = ?, updated_at = ?
+     SET name = ?, primary_muscle = ?, secondary_muscles = ?, equipment = ?, no_equipment = ?,
+         updated_at = ?
      WHERE id = ? AND is_custom = 1`,
     input.name.trim(),
     input.primaryMuscle,
     JSON.stringify(input.secondaryMuscles),
     input.equipment,
+    input.noEquipment ? 1 : 0,
     now(),
     id
   );

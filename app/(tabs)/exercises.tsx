@@ -4,6 +4,7 @@ import { SymbolView } from 'expo-symbols';
 import { useCallback, useState, type ReactNode } from 'react';
 import { FlatList, Pressable, StyleSheet } from 'react-native';
 
+import Badge, { NO_EQUIPMENT_LABEL } from '@/components/Badge';
 import Chip from '@/components/Chip';
 import { Text, TextInput, View, useThemeColor } from '@/components/Themed';
 import {
@@ -26,23 +27,24 @@ export default function ExercisesScreen() {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [muscles, setMuscles] = useState<MuscleGroup[]>([]);
   const [equipment, setEquipment] = useState<Equipment[]>([]);
+  const [noEquipment, setNoEquipment] = useState(false);
   const [exercises, setExercises] = useState<ExerciseListItem[] | null>(null);
   const border = useThemeColor({}, 'border');
   const muted = useThemeColor({}, 'muted');
 
-  const filterCount = muscles.length + equipment.length;
+  const filterCount = muscles.length + equipment.length + (noEquipment ? 1 : 0);
 
   // Reloads on focus too, so adds, edits and deletes show up when coming back.
   useFocusEffect(
     useCallback(() => {
       let cancelled = false;
-      listExercises(db, { search, muscles, equipment }).then((rows) => {
+      listExercises(db, { search, muscles, equipment, noEquipment }).then((rows) => {
         if (!cancelled) setExercises(rows);
       });
       return () => {
         cancelled = true;
       };
-    }, [db, search, muscles, equipment])
+    }, [db, search, muscles, equipment, noEquipment])
   );
 
   return (
@@ -79,6 +81,11 @@ export default function ExercisesScreen() {
             </FilterGroup>
 
             <FilterGroup title="Equipment">
+              <Chip
+                label={NO_EQUIPMENT_LABEL}
+                selected={noEquipment}
+                onPress={() => setNoEquipment((on) => !on)}
+              />
               {EQUIPMENT.map((item) => (
                 <Chip
                   key={item}
@@ -94,6 +101,7 @@ export default function ExercisesScreen() {
                 onPress={() => {
                   setMuscles([]);
                   setEquipment([]);
+                  setNoEquipment(false);
                 }}
                 hitSlop={8}
                 style={styles.clear}>
@@ -185,7 +193,6 @@ function FilterGroup({ title, children }: { title: string; children: ReactNode }
 
 function ExerciseRow({ exercise }: { exercise: ExerciseListItem }) {
   const muted = useThemeColor({}, 'muted');
-  const tint = useThemeColor({}, 'tint');
   const details = [
     MUSCLE_LABELS[exercise.primary_muscle],
     exercise.equipment ? EQUIPMENT_LABELS[exercise.equipment] : null,
@@ -197,10 +204,13 @@ function ExerciseRow({ exercise }: { exercise: ExerciseListItem }) {
         <View style={styles.rowText}>
           <Text style={styles.name}>{exercise.name}</Text>
           <Text style={[styles.details, { color: muted }]}>{details.join(' · ')}</Text>
+          {exercise.no_equipment === 1 && (
+            <View style={styles.rowBadge}>
+              <Badge label={NO_EQUIPMENT_LABEL} color="success" />
+            </View>
+          )}
         </View>
-        {exercise.is_custom === 1 && (
-          <Text style={[styles.badge, { color: tint, borderColor: tint }]}>Custom</Text>
-        )}
+        {exercise.is_custom === 1 && <Badge label="Custom" />}
       </Pressable>
     </Link>
   );
@@ -293,13 +303,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 2,
   },
-  badge: {
-    fontSize: 12,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    overflow: 'hidden',
+  rowBadge: {
+    marginTop: 4,
+    backgroundColor: 'transparent',
   },
   separator: {
     height: StyleSheet.hairlineWidth,
