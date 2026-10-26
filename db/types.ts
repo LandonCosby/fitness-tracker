@@ -100,6 +100,15 @@ export type Food = RecordColumns &
     last_used_at: number | null;
   };
 
+/** A weigh-in. At most one live row per date. */
+export type BodyWeight = RecordColumns & {
+  id: string;
+  /** Local calendar date, YYYY-MM-DD. */
+  date: string;
+  weight: number;
+  unit: WeightUnit;
+};
+
 /** One logged food. Numbers are per serving, copied from the food when logged. */
 export type FoodEntry = RecordColumns &
   Macros & {

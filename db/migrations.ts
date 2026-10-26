@@ -176,6 +176,16 @@ const migrations: string[] = [
   );
   CREATE INDEX idx_food_entries_date ON food_entries (date);
   `,
+  // 6: body weight weigh-ins, at most one per day.
+  `
+  CREATE TABLE body_weights (
+    id TEXT PRIMARY KEY NOT NULL,
+    date TEXT NOT NULL,
+    weight REAL NOT NULL,
+    unit TEXT NOT NULL CHECK (unit IN ('lb', 'kg')),${RECORD_COLUMNS}
+  );
+  CREATE UNIQUE INDEX idx_body_weights_date ON body_weights (date) WHERE deleted_at IS NULL;
+  `,
 ];
 
 export const DATABASE_VERSION = migrations.length;

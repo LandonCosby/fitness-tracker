@@ -13,6 +13,11 @@ export default {
     card: '#f2f2f7',
     danger: '#d70015',
     success: '#248a3d',
+    // Charts: series blue validated against this surface (dataviz palette slot 1).
+    chartSeries: '#2a78d6',
+    chartGrid: '#e1e0d9',
+    chartAxis: '#c3c2b7',
+    textSecondary: '#52514e',
   },
   dark: {
     text: '#fff',
@@ -25,5 +30,9 @@ export default {
     card: '#1c1c1e',
     danger: '#ff6961',
     success: '#30d158',
+    chartSeries: '#3987e5',
+    chartGrid: '#2c2c2a',
+    chartAxis: '#383835',
+    textSecondary: '#c3c2b7',
   },
 };

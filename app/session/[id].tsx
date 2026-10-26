@@ -5,6 +5,8 @@ import { Alert, Pressable, ScrollView, StyleSheet } from 'react-native';
 
 import Elapsed from '@/components/Elapsed';
 import IconButton from '@/components/IconButton';
+import { RECORD_LABELS, formatRecord } from '@/components/RecordTiles';
+import { getNewRecords } from '@/db/progress';
 import { Text, TextInput, View, useThemeColor } from '@/components/Themed';
 import {
   addExercisesToSession,
@@ -113,7 +115,22 @@ export default function SessionScreen() {
           text: 'Finish',
           onPress: async () => {
             await finishSession(db, session.id);
-            router.back();
+            const records = await getNewRecords(db, session.id, unit);
+            if (records.length === 0) {
+              router.back();
+              return;
+            }
+            Alert.alert(
+              records.length === 1 ? 'New personal record!' : `${records.length} new personal records!`,
+              records
+                .map(
+                  (r) =>
+                    `${r.exerciseName}: ${RECORD_LABELS[r.kind]} ${formatRecord(r.kind, r.records, unit)}`
+                )
+                .join('\n'),
+              [{ text: 'Nice', onPress: () => router.back() }],
+              { cancelable: false }
+            );
           },
         },
       ]

@@ -4,6 +4,8 @@ import { useCallback, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet } from 'react-native';
 
 import Badge, { NO_EQUIPMENT_LABEL } from '@/components/Badge';
+import RecordTiles from '@/components/RecordTiles';
+import { getExerciseRecords, type ExerciseRecords } from '@/db/progress';
 import { Text, View, useThemeColor } from '@/components/Themed';
 import { EQUIPMENT_LABELS, LEVEL_LABELS, MUSCLE_LABELS } from '@/db/exerciseTags';
 import { deleteExercise, getExercise, type ExerciseDetail } from '@/db/exercises';
@@ -17,6 +19,7 @@ export default function ExerciseDetailScreen() {
   // undefined while loading, null if it doesn't exist (or was deleted).
   const [exercise, setExercise] = useState<ExerciseDetail | null | undefined>(undefined);
   const [history, setHistory] = useState<ExerciseHistoryEntry[]>([]);
+  const [records, setRecords] = useState<ExerciseRecords | null>(null);
   const { unit } = useWeightUnit();
   const tint = useThemeColor({}, 'tint');
   const danger = useThemeColor({}, 'danger');
@@ -26,15 +29,20 @@ export default function ExerciseDetailScreen() {
   useFocusEffect(
     useCallback(() => {
       let cancelled = false;
-      Promise.all([getExercise(db, id), getExerciseHistory(db, id)]).then(([row, entries]) => {
+      Promise.all([
+        getExercise(db, id),
+        getExerciseHistory(db, id),
+        getExerciseRecords(db, id, unit),
+      ]).then(([row, entries, best]) => {
         if (cancelled) return;
         setExercise(row);
         setHistory(entries);
+        setRecords(best);
       });
       return () => {
         cancelled = true;
       };
-    }, [db, id])
+    }, [db, id, unit])
   );
 
   const confirmDelete = () => {
@@ -104,6 +112,13 @@ export default function ExerciseDetailScreen() {
         <Fact label="Logged as" value={exercise.isTimed ? 'Time (seconds)' : 'Reps'} />
         {exercise.isCustom && <Fact label="Source" value="Custom exercise" />}
       </View>
+
+      {records && history.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Personal records</Text>
+          <RecordTiles records={records} isTimed={exercise.isTimed} unit={unit} />
+        </View>
+      )}
 
       {history.length > 0 && (
         <View style={styles.section}>

@@ -20,8 +20,8 @@ Expo SDK 58 app using Expo Router. Four tabs: Workouts, Exercises, Nutrition and
 | 5 | Exercises tab | Done |
 | 6 | Workouts tab | Done |
 | 7 | Nutrition tab | Done |
-| 8 | Progress tab | Next |
-| 9 | Remove template leftovers | Not started |
+| 8 | Progress tab | Done |
+| 9 | Remove template leftovers | Done |
 | 10 | Development or EAS build, if needed | Not started |
 
 Run `npm run lint` and `npx tsc --noEmit` before marking any step done (see `AGENTS.md`).
@@ -51,6 +51,7 @@ Run `npm run lint` and `npx tsc --noEmit` before marking any step done (see `AGE
 | `sets` | `id`, `session_exercise_id`, `exercise_id`, `set_number`, `reps`, `duration_s`, `weight`, `unit`, `completed_at` |
 | `foods` (My foods) | `id`, `name`, `serving_label`, `calories`, `protein_g`, `carbs_g`, `fat_g`, `last_used_at` |
 | `food_entries` | `id`, `date`, `meal`, `food_id`, `name`, `serving_label`, `servings`, `calories`, `protein_g`, `carbs_g`, `fat_g` (per serving) |
+| `body_weights` | `id`, `date`, `weight`, `unit` |
 | `settings` | `key`, `value` (calorie and macro targets, weight unit) |
 
 Every table except `settings` also gets `created_at`, `updated_at` and `deleted_at`. `settings` only has `updated_at`. Personal records are calculated from `sets`, so they don't need their own table.
@@ -113,13 +114,20 @@ These conventions cost little now and avoid a migration if sync is added:
 
 ## 8. Progress
 
-- Personal records per exercise: heaviest weight, and best estimated 1-rep max.
-- Charts of weight or volume over time for a chosen exercise.
-- Calories and macros over time.
+- **Tab** (`app/(tabs)/progress.tsx`): one range filter (1M / 3M / 6M / 1Y / All, default 3M) above everything it scopes:
+  - **Exercise progress:** pick an exercise (single-pick mode of the picker; defaults to the most recently trained one). The chart shows one point per workout: best estimated 1RM if the exercise has ever been done with weight, otherwise most reps, or longest hold for timed exercises. Record tiles sit under the chart.
+  - **Weekly training:** columns of workouts or sets per week (Monday start), empty weeks included. "All" shows at most the last 52 weeks.
+  - **Nutrition:** daily calories or protein, with the target as a reference line. Days with nothing logged are skipped rather than drawn as zero.
+  - **Body weight:** a line of weigh-ins with the change over the range. "+ Log weight" opens `app/weigh-in.tsx`, which allows one weigh-in per day (saving again replaces it) and has a recent list with delete.
+  - **Personal records:** the 10 most recently trained exercises with their headline record. Tap one to open the exercise.
+- **Records** (`db/progress.ts`): heaviest weight, best estimated 1RM (Epley, `weight × (1 + reps/30)`, only from sets of 12 reps or fewer), most reps in a set, and longest hold for timed exercises. Weights are converted to the current unit. Ties keep the earliest date. They're shown on the exercise detail screen too (`components/RecordTiles.tsx`).
+- **New records on finish:** after Finish, an alert lists any records the workout beat. An exercise's first workout sets the baseline and doesn't count.
+- **Charts** (`components/charts/`): hand-drawn with `react-native-svg`, which is included in Expo Go. They follow the dataviz skill: one series in the validated blue (`chartSeries` in `constants/Colors.ts`, checked against the app's white and black backgrounds), a 2px line, an end dot with a surface ring, a labelled endpoint, hairline gridlines, clean y-ticks (1K / 2K), and columns at most 24px wide with a 4px rounded top and square base. A readout above each chart shows the latest value, or the touched point while you tap or drag; there's a crosshair on lines and selected-column highlighting on bars. **Show data** under each chart lists every value, so nothing depends on touch.
+- Migration 6 adds `body_weights`, with a unique date among rows that aren't deleted.
 
 ## 9. Cleanup
 
-`EditScreenInfo`, `ExternalLink` and `StyledText` have been removed. Still to remove: `components/PlaceholderScreen.tsx`, once every tab is built.
+Done: `EditScreenInfo`, `ExternalLink`, `StyledText` and `PlaceholderScreen` have been removed.
 
 ## 10. Builds
 
@@ -129,4 +137,3 @@ Only needed if a library with native code is added. Use `eas build --profile dev
 
 - **Sync:** revisit if backup or use on more than one device is needed. A file export/import is a cheap step before full sync.
 - **Food lookup:** foods are entered by hand and reused from My foods. Searching an online database (Open Food Facts, USDA) or scanning barcodes could be added later.
-- **Charts:** choose a chart library when starting step 8.

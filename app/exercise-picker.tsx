@@ -1,4 +1,4 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,7 +10,9 @@ import { deliverPickedExercises } from '@/lib/exercisePicker';
 
 // Opened with openExercisePicker(); returns the chosen exercises in the order tapped.
 export default function ExercisePickerScreen() {
-  const { muscles } = useLocalSearchParams<{ muscles?: string }>();
+  const { muscles, single } = useLocalSearchParams<{ muscles?: string; single?: string }>();
+  // Single mode: tapping an exercise picks it and closes.
+  const singleMode = single === '1';
   const initialMuscles = useMemo(() => (muscles ?? '').split(',').filter(isMuscleGroup), [muscles]);
   const [selected, setSelected] = useState<string[]>([]);
   const selectedIds = useMemo(() => new Set(selected), [selected]);
@@ -26,19 +28,25 @@ export default function ExercisePickerScreen() {
 
   return (
     <View style={styles.container}>
+      <Stack.Screen options={singleMode ? { title: 'Choose exercise' } : {}} />
       <ExerciseBrowser
         initialMuscles={initialMuscles}
         selectedIds={selectedIds}
-        onToggle={(exercise) =>
+        onToggle={(exercise) => {
+          if (singleMode) {
+            deliverPickedExercises([exercise.id]);
+            router.back();
+            return;
+          }
           setSelected((current) =>
             current.includes(exercise.id)
               ? current.filter((id) => id !== exercise.id)
               : [...current, exercise.id]
-          )
-        }
-        bottomInset={96}
+          );
+        }}
+        bottomInset={singleMode ? 24 : 96}
       />
-      <View
+      {!singleMode && <View
         style={[
           styles.footer,
           { paddingBottom: Math.max(insets.bottom, 12), borderTopColor: border },
@@ -57,7 +65,7 @@ export default function ExercisePickerScreen() {
               : `Add ${selected.length} ${selected.length === 1 ? 'exercise' : 'exercises'}`}
           </Text>
         </Pressable>
-      </View>
+      </View>}
     </View>
   );
 }

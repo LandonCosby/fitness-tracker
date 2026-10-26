@@ -47,6 +47,16 @@ export function formatDay(timestamp: number): string {
   });
 }
 
+// "Oct 20", or "Oct 20, 2025" outside this year. For chart axes and readouts.
+export function formatShortDate(timestamp: number): string {
+  const date = new Date(timestamp);
+  return date.toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    ...(date.getFullYear() === new Date().getFullYear() ? {} : { year: 'numeric' }),
+  });
+}
+
 export function formatTime(timestamp: number): string {
   return new Date(timestamp).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 }
