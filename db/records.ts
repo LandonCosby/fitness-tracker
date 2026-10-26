@@ -26,3 +26,15 @@ export function toDateKey(date: Date = new Date()): string {
   const day = String(date.getDate()).padStart(2, '0');
   return `${date.getFullYear()}-${month}-${day}`;
 }
+
+// Local midnight of a YYYY-MM-DD key.
+export function fromDateKey(key: string): Date {
+  const [year, month, day] = key.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
+export function shiftDateKey(key: string, days: number): string {
+  const date = fromDateKey(key);
+  date.setDate(date.getDate() + days);
+  return toDateKey(date);
+}

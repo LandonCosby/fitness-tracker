@@ -51,6 +51,22 @@ export function formatTime(timestamp: number): string {
   return new Date(timestamp).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 }
 
+// Up to one decimal, without a trailing ".0": 12, 12.5.
+export function formatNumber(value: number): string {
+  return String(Math.round(value * 10) / 10);
+}
+
+// "1,240" — calories are always shown as whole numbers.
+export function formatCalories(value: number): string {
+  return Math.round(value).toLocaleString();
+}
+
+// "1.5 × 1 cup", "2 servings", "1 serving".
+export function formatServings(servings: number, servingLabel: string | null): string {
+  if (servingLabel) return `${formatNumber(servings)} × ${servingLabel}`;
+  return `${formatNumber(servings)} ${servings === 1 ? 'serving' : 'servings'}`;
+}
+
 // One set in the display unit: "135 lb × 8", "8 reps", "45 s", "20 lb · 45 s".
 export function formatSet(set: SetValues, unit: WeightUnit): string {
   const weight =

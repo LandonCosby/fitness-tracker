@@ -19,8 +19,8 @@ Expo SDK 58 app using Expo Router. Four tabs: Workouts, Exercises, Nutrition and
 | 4b | Settings screen with the lb/kg switch | Done |
 | 5 | Exercises tab | Done |
 | 6 | Workouts tab | Done |
-| 7 | Nutrition tab | Next |
-| 8 | Progress tab | Not started |
+| 7 | Nutrition tab | Done |
+| 8 | Progress tab | Next |
 | 9 | Remove template leftovers | Not started |
 | 10 | Development or EAS build, if needed | Not started |
 
@@ -49,7 +49,8 @@ Run `npm run lint` and `npx tsc --noEmit` before marking any step done (see `AGE
 | `sessions` (a workout performed) | `id`, `workout_id` (nullable), `name`, `started_at`, `ended_at` |
 | `session_exercises` | `id`, `session_id`, `exercise_id`, `position` |
 | `sets` | `id`, `session_exercise_id`, `exercise_id`, `set_number`, `reps`, `duration_s`, `weight`, `unit`, `completed_at` |
-| `food_entries` | `id`, `date`, `meal`, `name`, `calories`, `protein_g`, `carbs_g`, `fat_g` |
+| `foods` (My foods) | `id`, `name`, `serving_label`, `calories`, `protein_g`, `carbs_g`, `fat_g`, `last_used_at` |
+| `food_entries` | `id`, `date`, `meal`, `food_id`, `name`, `serving_label`, `servings`, `calories`, `protein_g`, `carbs_g`, `fat_g` (per serving) |
 | `settings` | `key`, `value` (calorie and macro targets, weight unit) |
 
 Every table except `settings` also gets `created_at`, `updated_at` and `deleted_at`. `settings` only has `updated_at`. Personal records are calculated from `sets`, so they don't need their own table.
@@ -102,9 +103,13 @@ These conventions cost little now and avoid a migration if sync is added:
 
 ## 7. Nutrition
 
-- Add food entries by meal with calories and macros.
-- Show daily totals against the targets in `settings`.
-- Move between days.
+- **Tab** (`app/(tabs)/nutrition.tsx`): a day switcher (‹ Today ›; tap the date to jump back to today; no future days), a summary card (calories eaten / target with "left" or "over", plus protein, carbs and fat bars), and Breakfast, Lunch, Dinner and Snacks sections, each with "+ Add". Tap an entry to edit or delete it.
+- **Add food** (`app/food-add.tsx`): search **My foods**, most recently used first. Tap a food, pick servings (− / + in steps of 0.5, or the 0.5, 1, 1.5 and 2 shortcuts, or type a number) and add it. Long-press removes a food from My foods. "+ New food" opens the entry form, carrying over the search text.
+- **Entry form** (`app/food-entry.tsx`): name, serving size (optional), calories, protein, carbs and fat per serving, servings eaten, and meal. Blank calories are worked out from the macros (4/4/9 kcal per gram); the field shows the suggestion. "Save to My foods" is on by default. A food with the same name and serving (ignoring case) is updated instead of duplicated.
+- **Entries copy the food's numbers when logged**, so editing or removing a saved food never changes past days. Day totals are per-serving numbers × servings.
+- **Targets** for calories, protein, carbs and fat are in Settings. Each is optional, and the screen shows what the macro targets add up to in kcal.
+- The default meal comes from the time of day: breakfast until 10:30, lunch until 3 pm, dinner until 9 pm, then snack.
+- Migration 5 adds the `foods` table and rebuilds `food_entries`, which no earlier build had written to, with `food_id`, `serving_label` and `servings`. Queries are in `db/nutrition.ts`.
 
 ## 8. Progress
 
@@ -123,5 +128,5 @@ Only needed if a library with native code is added. Use `eas build --profile dev
 ## Open questions
 
 - **Sync:** revisit if backup or use on more than one device is needed. A file export/import is a cheap step before full sync.
-- **Food entry:** manual only, or look foods up in a nutrition database (which needs the network and an API key)?
+- **Food lookup:** foods are entered by hand and reused from My foods. Searching an online database (Open Food Facts, USDA) or scanning barcodes could be added later.
 - **Charts:** choose a chart library when starting step 8.

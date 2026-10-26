@@ -143,6 +143,39 @@ const migrations: string[] = [
   CREATE INDEX idx_sets_session_exercise ON sets (session_exercise_id, set_number);
   CREATE INDEX idx_sets_exercise ON sets (exercise_id);
   `,
+  // 5: nutrition. Adds the saved-foods library and rebuilds food_entries (never written by
+  // a released build). Entries copy per-serving numbers so editing a food doesn't rewrite
+  // past days.
+  `
+  DROP TABLE food_entries;
+
+  CREATE TABLE foods (
+    id TEXT PRIMARY KEY NOT NULL,
+    name TEXT NOT NULL,
+    serving_label TEXT,
+    calories REAL NOT NULL,
+    protein_g REAL NOT NULL DEFAULT 0,
+    carbs_g REAL NOT NULL DEFAULT 0,
+    fat_g REAL NOT NULL DEFAULT 0,
+    last_used_at INTEGER,${RECORD_COLUMNS}
+  );
+  CREATE INDEX idx_foods_last_used_at ON foods (last_used_at);
+
+  CREATE TABLE food_entries (
+    id TEXT PRIMARY KEY NOT NULL,
+    date TEXT NOT NULL,
+    meal TEXT NOT NULL CHECK (meal IN ('breakfast', 'lunch', 'dinner', 'snack')),
+    food_id TEXT REFERENCES foods (id),
+    name TEXT NOT NULL,
+    serving_label TEXT,
+    servings REAL NOT NULL DEFAULT 1,
+    calories REAL NOT NULL,
+    protein_g REAL NOT NULL DEFAULT 0,
+    carbs_g REAL NOT NULL DEFAULT 0,
+    fat_g REAL NOT NULL DEFAULT 0,${RECORD_COLUMNS}
+  );
+  CREATE INDEX idx_food_entries_date ON food_entries (date);
+  `,
 ];
 
 export const DATABASE_VERSION = migrations.length;

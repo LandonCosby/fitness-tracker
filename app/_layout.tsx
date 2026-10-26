@@ -63,6 +63,8 @@ function RootLayoutNav() {
             />
             <Stack.Screen name="workout-form" options={{ title: 'Workout' }} />
             <Stack.Screen name="session/[id]" options={{ title: 'Workout' }} />
+            <Stack.Screen name="food-add" options={{ presentation: 'modal', title: 'Add food' }} />
+            <Stack.Screen name="food-entry" options={{ presentation: 'modal', title: 'Food' }} />
           </Stack>
         </ThemeProvider>
       </WeightUnitProvider>

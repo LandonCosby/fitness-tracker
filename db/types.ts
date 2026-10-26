@@ -83,14 +83,32 @@ export type WorkoutSet = RecordColumns & {
 
 export type Meal = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 
-export type FoodEntry = RecordColumns & {
-  id: string;
-  /** Local calendar date, YYYY-MM-DD. */
-  date: string;
-  meal: Meal;
-  name: string;
+type Macros = {
   calories: number;
   protein_g: number;
   carbs_g: number;
   fat_g: number;
 };
+
+/** A saved food in "My foods". Numbers are per serving. */
+export type Food = RecordColumns &
+  Macros & {
+    id: string;
+    name: string;
+    /** e.g. "1 cup", "100 g". */
+    serving_label: string | null;
+    last_used_at: number | null;
+  };
+
+/** One logged food. Numbers are per serving, copied from the food when logged. */
+export type FoodEntry = RecordColumns &
+  Macros & {
+    id: string;
+    /** Local calendar date, YYYY-MM-DD. */
+    date: string;
+    meal: Meal;
+    food_id: string | null;
+    name: string;
+    serving_label: string | null;
+    servings: number;
+  };

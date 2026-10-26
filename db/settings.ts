@@ -30,3 +30,37 @@ export async function getWeightUnit(db: SQLiteDatabase): Promise<WeightUnit> {
 export async function setWeightUnit(db: SQLiteDatabase, unit: WeightUnit) {
   await setSetting(db, 'weight_unit', unit);
 }
+
+/** Daily nutrition goals. null means no goal for that number. */
+export type NutritionTargets = {
+  calories: number | null;
+  proteinG: number | null;
+  carbsG: number | null;
+  fatG: number | null;
+};
+
+const TARGET_KEYS: Record<keyof NutritionTargets, string> = {
+  calories: 'target_calories',
+  proteinG: 'target_protein_g',
+  carbsG: 'target_carbs_g',
+  fatG: 'target_fat_g',
+};
+
+export async function getNutritionTargets(db: SQLiteDatabase): Promise<NutritionTargets> {
+  const entries = await Promise.all(
+    (Object.keys(TARGET_KEYS) as (keyof NutritionTargets)[]).map(async (name) => {
+      const value = Number(await getSetting(db, TARGET_KEYS[name]));
+      return [name, Number.isFinite(value) && value > 0 ? value : null] as const;
+    })
+  );
+  return Object.fromEntries(entries) as NutritionTargets;
+}
+
+// An empty value clears that goal.
+export async function setNutritionTarget(
+  db: SQLiteDatabase,
+  name: keyof NutritionTargets,
+  value: number | null
+) {
+  await setSetting(db, TARGET_KEYS[name], value != null && value > 0 ? String(value) : '');
+}
