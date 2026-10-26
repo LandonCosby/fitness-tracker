@@ -72,6 +72,13 @@ const migrations: string[] = [
     updated_at INTEGER NOT NULL
   );
   `,
+  // 2: details for the built-in exercise library.
+  `
+  ALTER TABLE exercises ADD COLUMN level TEXT;
+  ALTER TABLE exercises ADD COLUMN category TEXT;
+  ALTER TABLE exercises ADD COLUMN instructions TEXT NOT NULL DEFAULT '[]';
+  CREATE INDEX idx_exercises_primary_muscle ON exercises (primary_muscle);
+  `,
 ];
 
 export const DATABASE_VERSION = migrations.length;

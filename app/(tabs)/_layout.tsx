@@ -1,6 +1,6 @@
 import { SymbolView } from 'expo-symbols';
-import { Link, Tabs } from 'expo-router';
-import { Pressable, type ColorValue } from 'react-native';
+import { Link, Tabs, type Href } from 'expo-router';
+import { Pressable, View, type ColorValue } from 'react-native';
 
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
@@ -19,15 +19,25 @@ function tabIcon(ios: string, material: string) {
   return TabIcon;
 }
 
-function SettingsButton() {
+function HeaderIconLink({
+  href,
+  label,
+  ios,
+  material,
+}: {
+  href: Href;
+  label: string;
+  ios: string;
+  material: string;
+}) {
   const colorScheme = useColorScheme();
 
   return (
-    <Link href="/settings" asChild>
-      <Pressable style={{ marginRight: 15 }} accessibilityLabel="Settings">
+    <Link href={href} asChild>
+      <Pressable style={{ marginRight: 15 }} accessibilityLabel={label}>
         {({ pressed }) => (
           <SymbolView
-            name={{ ios: 'gearshape', android: 'settings', web: 'settings' }}
+            name={{ ios: ios as any, android: material as any, web: material as any }}
             size={25}
             tintColor={Colors[colorScheme].text}
             style={{ opacity: pressed ? 0.5 : 1 }}
@@ -35,6 +45,19 @@ function SettingsButton() {
         )}
       </Pressable>
     </Link>
+  );
+}
+
+function SettingsButton() {
+  return <HeaderIconLink href="/settings" label="Settings" ios="gearshape" material="settings" />;
+}
+
+function ExercisesHeaderButtons() {
+  return (
+    <View style={{ flexDirection: 'row' }}>
+      <HeaderIconLink href="/exercise-form" label="Add exercise" ios="plus" material="add" />
+      <SettingsButton />
+    </View>
   );
 }
 
@@ -56,7 +79,11 @@ export default function TabLayout() {
       />
       <Tabs.Screen
         name="exercises"
-        options={{ title: 'Exercises', tabBarIcon: tabIcon('list.bullet', 'list') }}
+        options={{
+          title: 'Exercises',
+          tabBarIcon: tabIcon('list.bullet', 'list'),
+          headerRight: () => <ExercisesHeaderButtons />,
+        }}
       />
       <Tabs.Screen
         name="nutrition"

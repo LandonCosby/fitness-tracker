@@ -1,3 +1,4 @@
+import type { Equipment, MuscleGroup } from './exerciseTags';
 import type { WeightUnit } from './units';
 
 // Row shapes as stored in SQLite. Booleans are 0/1 and timestamps are epoch milliseconds.
@@ -11,11 +12,15 @@ export type RecordColumns = {
 export type Exercise = RecordColumns & {
   id: string;
   name: string;
-  primary_muscle: string;
-  /** JSON array of muscle names. */
+  primary_muscle: MuscleGroup;
+  /** JSON array of muscle groups. */
   secondary_muscles: string;
-  equipment: string | null;
+  equipment: Equipment | null;
   is_custom: 0 | 1;
+  level: string | null;
+  category: string | null;
+  /** JSON array of instruction steps. */
+  instructions: string;
 };
 
 export type Workout = RecordColumns & {

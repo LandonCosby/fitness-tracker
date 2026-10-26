@@ -6,7 +6,7 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
-import { migrateDbIfNeeded } from '@/db/migrations';
+import { initDatabase } from '@/db/init';
 import { WeightUnitProvider } from '@/hooks/useWeightUnit';
 
 export {
@@ -49,12 +49,14 @@ function RootLayoutNav() {
   const colorScheme = useColorScheme();
 
   return (
-    <SQLiteProvider databaseName="fitness.db" onInit={migrateDbIfNeeded}>
+    <SQLiteProvider databaseName="fitness.db" onInit={initDatabase}>
       <WeightUnitProvider>
         <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
           <Stack>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="settings" options={{ presentation: 'modal', title: 'Settings' }} />
+            <Stack.Screen name="exercise/[id]" options={{ title: 'Exercise' }} />
+            <Stack.Screen name="exercise-form" options={{ presentation: 'modal' }} />
           </Stack>
         </ThemeProvider>
       </WeightUnitProvider>

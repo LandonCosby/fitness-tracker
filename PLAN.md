@@ -17,8 +17,8 @@ Expo SDK 58 app using Expo Router. Four tabs: Workouts, Exercises, Nutrition and
 | 3 | Commit the four-tab layout | Done |
 | 4 | Data layer (`expo-sqlite`) | Done |
 | 4b | Settings screen with the lb/kg switch | Done |
-| 5 | Exercises tab | Next |
-| 6 | Workouts tab | Not started |
+| 5 | Exercises tab | Done |
+| 6 | Workouts tab | Next |
 | 7 | Nutrition tab | Not started |
 | 8 | Progress tab | Not started |
 | 9 | Remove template leftovers | Not started |
@@ -70,9 +70,15 @@ These conventions cost little now and avoid a migration if sync is added:
 
 ## 5. Exercises
 
-- Seed a built-in library of common exercises on first launch.
-- Browse and filter by muscle group, and search by name.
-- Let the user add custom exercises.
+- **Library:** 739 built-in exercises from [free-exercise-db](https://github.com/yuhonas/free-exercise-db) (public domain). Its stretching and cardio entries are left out, and there are no photos, so everything works offline.
+  - `scripts/build-exercise-seed.mjs` converts the dataset into `db/seed/exercises.json`. Usage is in the script header.
+  - `db/seedExercises.ts` imports the library at startup. After regenerating the JSON, bump `BUILT_IN_SEED_VERSION` so existing installs update.
+  - Built-in IDs are `builtin:<dataset id>`, so they're the same on every device. Built-in exercises are read-only.
+  - Dataset muscles are mapped to 11 groups (`db/exerciseTags.ts`). Lats, middle back, lower back, traps and neck count as Back. Abductors and adductors count as Glutes.
+- **List** (`app/(tabs)/exercises.tsx`): search by name, plus a filter for one primary muscle group.
+- **Detail** (`app/exercise/[id].tsx`): muscles, equipment, level and instructions. Steps 6 and 8 will add history and personal records here.
+- **Custom exercises** (`app/exercise-form.tsx`): add with the + in the header, and edit or delete from the detail screen. Names must be unique (ignoring case). Deleting is a soft delete.
+- Migration 2 adds `level`, `category` and `instructions` columns to `exercises`. Queries are in `db/exercises.ts`.
 
 ## 6. Workouts
 
@@ -95,7 +101,7 @@ These conventions cost little now and avoid a migration if sync is added:
 
 ## 9. Cleanup
 
-`components/EditScreenInfo.tsx` was removed in step 4b. Still to remove: `components/ExternalLink.tsx` and `components/StyledText.tsx` (now unused, unless a later step needs them), and `components/PlaceholderScreen.tsx` once every tab is built.
+`EditScreenInfo`, `ExternalLink` and `StyledText` have been removed. Still to remove: `components/PlaceholderScreen.tsx`, once every tab is built.
 
 ## 10. Builds
 
@@ -104,6 +110,5 @@ Only needed if a library with native code is added. Use `eas build --profile dev
 ## Open questions
 
 - **Sync:** revisit if backup or use on more than one device is needed. A file export/import is a cheap step before full sync.
-- **Exercise library:** where does the seed list come from: written by hand, or an open dataset?
 - **Food entry:** manual only, or look foods up in a nutrition database (which needs the network and an API key)?
 - **Charts:** choose a chart library when starting step 8.

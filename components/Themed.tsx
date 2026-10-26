@@ -4,7 +4,9 @@
  */
 import {
   Text as DefaultText,
+  TextInput as DefaultTextInput,
   View as DefaultView,
+  type TextInputProps as DefaultTextInputProps,
   type TextProps as DefaultTextProps,
   type ViewProps as DefaultViewProps,
 } from 'react-native';
@@ -20,6 +22,7 @@ type ThemeProps = {
 
 export type TextProps = ThemeProps & DefaultTextProps;
 export type ViewProps = ThemeProps & DefaultViewProps;
+export type TextInputProps = DefaultTextInputProps;
 
 export function useThemeColor(
   props: { light?: string; dark?: string },
@@ -47,4 +50,32 @@ export function View(props: ViewProps) {
   const backgroundColor = useThemeColor({ light: lightColor, dark: darkColor }, 'background');
 
   return <DefaultView style={[{ backgroundColor }, style]} {...otherProps} />;
+}
+
+export function TextInput(props: TextInputProps) {
+  const { style, ...otherProps } = props;
+  const color = useThemeColor({}, 'text');
+  const backgroundColor = useThemeColor({}, 'card');
+  const borderColor = useThemeColor({}, 'border');
+  const placeholderTextColor = useThemeColor({}, 'muted');
+
+  return (
+    <DefaultTextInput
+      placeholderTextColor={placeholderTextColor}
+      style={[
+        {
+          color,
+          backgroundColor,
+          borderColor,
+          borderWidth: 1,
+          borderRadius: 10,
+          paddingHorizontal: 12,
+          paddingVertical: 10,
+          fontSize: 16,
+        },
+        style,
+      ]}
+      {...otherProps}
+    />
+  );
 }
