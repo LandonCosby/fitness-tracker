@@ -57,7 +57,7 @@ export default function RecordTiles({
   isTimed: boolean;
   unit: WeightUnit;
 }) {
-  const border = useThemeColor({}, 'border');
+  const surface = useThemeColor({}, 'cardRaised');
   const muted = useThemeColor({}, 'muted');
 
   return (
@@ -67,7 +67,7 @@ export default function RecordTiles({
         const detail = detailFor(kind, records, unit);
         const at = records[kind]?.at;
         return (
-          <View key={kind} style={[styles.tile, { borderColor: border }]}>
+          <View key={kind} style={[styles.tile, { backgroundColor: surface }]}>
             <Text style={[styles.label, { color: muted }]}>{RECORD_LABELS[kind]}</Text>
             <Text style={styles.value}>{value ?? '—'}</Text>
             {(detail || at) && (
@@ -89,17 +89,18 @@ const styles = StyleSheet.create({
   },
   tile: {
     flex: 1,
-    borderWidth: 1,
-    borderRadius: 10,
-    padding: 10,
+    borderRadius: 14,
+    padding: 12,
     gap: 2,
   },
   label: {
     fontSize: 12,
+    fontWeight: '600',
   },
   value: {
-    fontSize: 17,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '800',
+    fontVariant: ['tabular-nums'],
   },
   detail: {
     fontSize: 11,

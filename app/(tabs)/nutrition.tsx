@@ -4,8 +4,10 @@ import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 
 import IconButton from '@/components/IconButton';
+import PressableLink from '@/components/PressableLink';
 import ProgressBar from '@/components/ProgressBar';
 import { Text, View, useThemeColor } from '@/components/Themed';
+import { Button, Card, TextAction } from '@/components/ui';
 import {
   MEALS,
   MEAL_LABELS,
@@ -18,7 +20,7 @@ import {
 import { fromDateKey, shiftDateKey, toDateKey } from '@/db/records';
 import { getNutritionTargets, type NutritionTargets } from '@/db/settings';
 import type { Meal } from '@/db/types';
-import { formatCalories, formatDay, formatNumber, formatServings } from '@/lib/format';
+import { formatAmount, formatCalories, formatDay, formatNumber } from '@/lib/format';
 
 export default function NutritionScreen() {
   const db = useSQLiteContext();
@@ -82,11 +84,9 @@ export default function NutritionScreen() {
         ))}
 
       {targets && Object.values(targets).every((t) => t == null) && (
-        <Link href="/settings" asChild>
+        <Link href="/nutrition-goals" asChild>
           <Pressable hitSlop={8}>
-            <Text style={[styles.hint, { color: muted }]}>
-              Set daily calorie and macro targets in Settings ›
-            </Text>
+            <Text style={[styles.hint, { color: muted }]}>Set daily calorie and macro targets ›</Text>
           </Pressable>
         </Link>
       )}
@@ -95,14 +95,19 @@ export default function NutritionScreen() {
 }
 
 function Summary({ totals, targets }: { totals: Nutrients; targets: NutritionTargets }) {
-  const border = useThemeColor({}, 'border');
   const muted = useThemeColor({}, 'muted');
   const danger = useThemeColor({}, 'danger');
 
   const remaining = targets.calories != null ? targets.calories - totals.calories : null;
 
   return (
-    <View style={[styles.summary, { borderColor: border }]}>
+    <Card style={styles.summary}>
+      <View style={styles.summaryHeader}>
+        <Text style={[styles.eyebrow, { color: muted }]}>CALORIES</Text>
+        <Link href="/nutrition-goals" asChild>
+          <TextAction label="Edit goals" accessibilityLabel="Edit nutrition goals and units" />
+        </Link>
+      </View>
       <View style={styles.calorieRow}>
         <Text style={styles.calories}>
           {formatCalories(totals.calories)}
@@ -125,7 +130,7 @@ function Summary({ totals, targets }: { totals: Nutrients; targets: NutritionTar
         <Macro label="Carbs" value={totals.carbsG} target={targets.carbsG} />
         <Macro label="Fat" value={totals.fatG} target={targets.fatG} />
       </View>
-    </View>
+    </Card>
   );
 }
 
@@ -152,49 +157,53 @@ function MealSection({
   date: string;
   entries: LoggedFood[];
 }) {
-  const tint = useThemeColor({}, 'tint');
   const muted = useThemeColor({}, 'muted');
   const border = useThemeColor({}, 'border');
   const total = sumNutrients(entries.map(entryTotals));
 
   return (
-    <View style={styles.meal}>
-      <View style={[styles.mealHeader, { borderBottomColor: border }]}>
-        <Text style={styles.mealTitle}>{MEAL_LABELS[meal]}</Text>
-        {entries.length > 0 && (
+    <Card style={styles.meal}>
+      <View style={styles.mealHeader}>
+        <View style={styles.mealHeading}>
+          <Text style={styles.mealTitle}>{MEAL_LABELS[meal]}</Text>
           <Text style={[styles.mealCalories, { color: muted }]}>
-            {formatCalories(total.calories)} kcal
+            {entries.length > 0 ? `${formatCalories(total.calories)} kcal` : 'Nothing logged'}
           </Text>
-        )}
+        </View>
         <Link href={{ pathname: '/food-add', params: { date, meal } }} asChild>
-          <Pressable hitSlop={8} accessibilityLabel={`Add food to ${MEAL_LABELS[meal]}`}>
-            <Text style={[styles.add, { color: tint }]}>+ Add</Text>
-          </Pressable>
+          <Button
+            label="+ Add"
+            variant="soft"
+            compact
+            accessibilityLabel={`Add food to ${MEAL_LABELS[meal]}`}
+          />
         </Link>
       </View>
 
       {entries.map((entry) => {
         const totals = entryTotals(entry);
         return (
-          <Link
+          <PressableLink
             key={entry.id}
             href={{ pathname: '/food-entry', params: { id: entry.id } }}
-            asChild>
-            <Pressable style={({ pressed }) => [styles.entry, pressed && styles.pressed]}>
+            style={({ pressed }) => [
+              styles.entry,
+              { borderTopColor: border },
+              pressed && styles.pressed,
+            ]}>
               <View style={styles.entryText}>
                 <Text style={styles.entryName}>{entry.name}</Text>
                 <Text style={[styles.entryDetail, { color: muted }]}>
-                  {formatServings(entry.servings, entry.servingLabel)} · P{' '}
+                  {formatAmount(entry.servings, entry.servingLabel, entry.servingGrams)} · P{' '}
                   {formatNumber(totals.proteinG)} · C {formatNumber(totals.carbsG)} · F{' '}
                   {formatNumber(totals.fatG)}
                 </Text>
               </View>
               <Text style={styles.entryCalories}>{formatCalories(totals.calories)}</Text>
-            </Pressable>
-          </Link>
+          </PressableLink>
         );
       })}
-    </View>
+    </Card>
   );
 }
 
@@ -204,22 +213,31 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
-    gap: 20,
+    paddingTop: 4,
+    gap: 14,
     paddingBottom: 40,
   },
   dayRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingHorizontal: 4,
   },
   dayLabel: {
     fontSize: 17,
-    fontWeight: '600',
+    fontWeight: '800',
+  },
+  eyebrow: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1,
+  },
+  summaryHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   summary: {
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 16,
     gap: 12,
   },
   calorieRow: {
@@ -227,67 +245,71 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
     justifyContent: 'space-between',
     gap: 8,
+    marginTop: -8,
   },
   calories: {
-    fontSize: 28,
-    fontWeight: '700',
+    fontSize: 34,
+    fontWeight: '800',
+    fontVariant: ['tabular-nums'],
   },
   caloriesUnit: {
     fontSize: 15,
-    fontWeight: '400',
+    fontWeight: '600',
   },
   remaining: {
     fontSize: 15,
+    fontWeight: '700',
   },
   macros: {
     flexDirection: 'row',
     gap: 16,
+    marginTop: 4,
   },
   macro: {
     flex: 1,
     gap: 4,
   },
   macroLabel: {
-    fontSize: 13,
+    fontSize: 12,
+    fontWeight: '600',
   },
   macroValue: {
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: '800',
   },
   meal: {
-    gap: 4,
+    paddingVertical: 12,
   },
   mealHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     paddingBottom: 6,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  mealHeading: {
+    flex: 1,
   },
   mealTitle: {
-    flex: 1,
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '800',
   },
   mealCalories: {
-    fontSize: 14,
-  },
-  add: {
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: '500',
   },
   entry: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: 10,
     gap: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
   entryText: {
     flex: 1,
-    backgroundColor: 'transparent',
   },
   entryName: {
     fontSize: 16,
+    fontWeight: '600',
   },
   entryDetail: {
     fontSize: 13,
@@ -295,6 +317,7 @@ const styles = StyleSheet.create({
   },
   entryCalories: {
     fontSize: 16,
+    fontWeight: '700',
     fontVariant: ['tabular-nums'],
   },
   hint: {

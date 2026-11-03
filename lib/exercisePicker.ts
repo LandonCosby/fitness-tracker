@@ -8,9 +8,14 @@ let pending: ((exerciseIds: string[]) => void) | null = null;
 
 export function openExercisePicker(
   onPick: (exerciseIds: string[]) => void,
-  options: { muscles?: MuscleGroup[]; single?: boolean } = {}
+  options: { muscles?: MuscleGroup[]; single?: boolean; performedOnly?: boolean } = {}
 ) {
   pending = onPick;
+  // Only exercises with logged sets, one at a time (Progress chart).
+  if (options.performedOnly) {
+    router.push('/performed-exercises');
+    return;
+  }
   router.push({
     pathname: '/exercise-picker',
     params: {

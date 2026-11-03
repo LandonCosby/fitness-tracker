@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet } from 'react-native';
 
 import Badge, { NO_EQUIPMENT_LABEL } from '@/components/Badge';
+import PressableLink from '@/components/PressableLink';
 import RecordTiles from '@/components/RecordTiles';
 import { getExerciseRecords, type ExerciseRecords } from '@/db/progress';
 import { Text, View, useThemeColor } from '@/components/Themed';
@@ -72,7 +73,10 @@ export default function ExerciseDetailScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      contentInsetAdjustmentBehavior="automatic">
       <Stack.Screen
         options={{
           title: exercise.name,
@@ -124,17 +128,15 @@ export default function ExerciseDetailScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Recent</Text>
           {history.map((entry) => (
-            <Link
+            <PressableLink
               key={entry.sessionId}
               href={{ pathname: '/session/[id]', params: { id: entry.sessionId } }}
-              asChild>
-              <Pressable style={({ pressed }) => [styles.historyRow, pressed && styles.pressed]}>
-                <Text style={[styles.historyDate, { color: muted }]}>{formatDay(entry.startedAt)}</Text>
-                <Text style={styles.historySets}>
-                  {entry.sets.map((set) => formatSet(set, unit)).join(', ')}
-                </Text>
-              </Pressable>
-            </Link>
+              style={({ pressed }) => [styles.historyRow, pressed && styles.pressed]}>
+              <Text style={[styles.historyDate, { color: muted }]}>{formatDay(entry.startedAt)}</Text>
+              <Text style={styles.historySets}>
+                {entry.sets.map((set) => formatSet(set, unit)).join(', ')}
+              </Text>
+            </PressableLink>
           ))}
         </View>
       )}
@@ -236,7 +238,7 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: 14,
     paddingVertical: 12,
     alignItems: 'center',
   },

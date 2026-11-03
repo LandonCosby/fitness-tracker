@@ -1,48 +1,62 @@
-import { Link, router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { useCallback, useState, type ReactNode } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { SymbolView } from 'expo-symbols';
+import { useCallback, useState } from 'react';
+import { ScrollView, StyleSheet } from 'react-native';
 
-import Elapsed from '@/components/Elapsed';
-import { Text, View, useThemeColor } from '@/components/Themed';
-import { MUSCLE_LABELS } from '@/db/exerciseTags';
+import BodyMap from '@/components/body/BodyMap';
 import {
-  getActiveSession,
-  listSessionHistory,
-  startSession,
-  type SessionSummary,
-} from '@/db/sessions';
-import { listWorkouts, type WorkoutListItem } from '@/db/workouts';
-import { useWeightUnit } from '@/hooks/useWeightUnit';
-import { formatDay, formatDuration } from '@/lib/format';
+  RECOVERY_WINDOW_DAYS,
+  RecoveryLegend,
+  recoveryAmount,
+  recoveryColor,
+  recoveryFills,
+  trainedAgo,
+} from '@/components/body/recovery';
+import PressableLink from '@/components/PressableLink';
+import { Text, View, useThemeColor } from '@/components/Themed';
+import { Button, Card, SectionHeader } from '@/components/ui';
+import {
+  ActiveWorkoutCard,
+  WeekStats,
 
-type ActiveSession = Awaited<ReturnType<typeof getActiveSession>>;
+  type ActiveSession,
+} from '@/components/WorkoutWidgets';
+import { MUSCLE_LABELS, type MuscleGroup } from '@/db/exerciseTags';
+import { getMuscleRecovery, type MuscleRecovery } from '@/db/muscles';
+import { getProfile } from '@/db/profile';
+import { getActiveSession, listSessionHistory, type SessionSummary } from '@/db/sessions';
+import { getFoodStreak, getWorkoutGoalStreak, type WorkoutGoalStreak } from '@/db/streaks';
 
-const sessionHref = (id: string) => ({ pathname: '/session/[id]' as const, params: { id } });
-
-type ScreenData = {
+type HomeData = {
   active: ActiveSession;
-  workouts: WorkoutListItem[];
   history: SessionSummary[];
+  recovery: Record<MuscleGroup, MuscleRecovery>;
+  food: { days: number; loggedToday: boolean };
+  workouts: WorkoutGoalStreak;
+  loadedAt: number;
 };
 
-export default function WorkoutsScreen() {
+export default function HomeScreen() {
   const db = useSQLiteContext();
-  const { unit } = useWeightUnit();
-  const [data, setData] = useState<ScreenData | null>(null);
-  const [starting, setStarting] = useState(false);
-  const tint = useThemeColor({}, 'tint');
-  const background = useThemeColor({}, 'background');
+  const [data, setData] = useState<HomeData | null>(null);
   const muted = useThemeColor({}, 'muted');
 
   useFocusEffect(
     useCallback(() => {
       let cancelled = false;
-      Promise.all([getActiveSession(db), listWorkouts(db), listSessionHistory(db)]).then(
-        ([active, workouts, history]) => {
-          if (!cancelled) setData({ active, workouts, history });
-        }
-      );
+      (async () => {
+        const loadedAt = Date.now();
+        const profile = await getProfile(db);
+        const [active, history, recovery, food, workouts] = await Promise.all([
+          getActiveSession(db),
+          listSessionHistory(db),
+          getMuscleRecovery(db, RECOVERY_WINDOW_DAYS, loadedAt),
+          getFoodStreak(db),
+          getWorkoutGoalStreak(db, profile.weeklyWorkoutGoal, loadedAt),
+        ]);
+        if (!cancelled) setData({ active, history, recovery, food, workouts, loadedAt });
+      })();
       return () => {
         cancelled = true;
       };
@@ -51,175 +65,151 @@ export default function WorkoutsScreen() {
 
   if (!data) return <View style={styles.container} />;
 
-  const start = async (workoutId: string | null) => {
-    if (data.active) {
-      const activeId = data.active.id;
-      Alert.alert('Workout in progress', 'Finish or discard it before starting another.', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Resume', onPress: () => router.push(sessionHref(activeId)) },
-      ]);
-      return;
-    }
-    if (starting) return;
-    setStarting(true);
-    try {
-      const sessionId = await startSession(db, workoutId, unit);
-      router.push(sessionHref(sessionId));
-    } finally {
-      setStarting(false);
-    }
-  };
+  const today = new Date(data.loadedAt).toLocaleDateString(undefined, {
+    weekday: 'long',
+    month: 'short',
+    day: 'numeric',
+  });
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <Text style={[styles.eyebrow, { color: muted }]}>{today.toUpperCase()}</Text>
+
       {data.active ? (
-        <Link href={sessionHref(data.active.id)} asChild>
-          <Pressable
-            style={({ pressed }) => [
-              styles.activeCard,
-              { backgroundColor: tint },
-              pressed && styles.pressed,
-            ]}>
-            <View style={styles.transparent}>
-              <Text style={[styles.activeLabel, { color: background }]}>Workout in progress</Text>
-              <Text style={[styles.activeName, { color: background }]}>{data.active.name}</Text>
-            </View>
-            <Text style={[styles.activeTime, { color: background }]}>
-              <Elapsed since={data.active.startedAt} />
-            </Text>
-            <Text style={[styles.activeResume, { color: background }]}>Resume ›</Text>
-          </Pressable>
-        </Link>
+        <ActiveWorkoutCard session={data.active} />
       ) : (
-        <Pressable
-          onPress={() => start(null)}
-          disabled={starting}
-          style={({ pressed }) => [
-            styles.primaryButton,
-            { backgroundColor: tint },
-            (pressed || starting) && styles.pressed,
-          ]}>
-          <Text style={[styles.primaryLabel, { color: background }]}>Start empty workout</Text>
-        </Pressable>
+        <Button label="Start workout" onPress={() => router.push('/start-workout')} />
       )}
 
-      <Section
-        title="My workouts"
-        action={
-          <Link href="/workout-form" asChild>
-            <Pressable hitSlop={8}>
-              <Text style={{ color: tint }}>+ New</Text>
-            </Pressable>
-          </Link>
-        }>
-        {data.workouts.length === 0 ? (
-          <Text style={[styles.empty, { color: muted }]}>
-            Create a workout to reuse it: pick body parts, add exercises, and set sets × reps.
-          </Text>
-        ) : (
-          data.workouts.map((workout) => (
-            <WorkoutCard key={workout.id} workout={workout} onStart={() => start(workout.id)} />
-          ))
-        )}
-      </Section>
+      <View style={styles.streaks}>
+        <StreakCard
+          icon={{ ios: 'flame.fill', material: 'local_fire_department' }}
+          value={data.food.days}
+          unit={data.food.days === 1 ? 'day' : 'days'}
+          label="Food logged"
+          detail={data.food.loggedToday ? 'Logged today' : 'Log today to keep it going'}
+          href="/nutrition"
+        />
+        <StreakCard
+          icon={{ ios: 'target', material: 'track_changes' }}
+          value={data.workouts.weeks}
+          unit={data.workouts.weeks === 1 ? 'week' : 'weeks'}
+          label={`${data.workouts.goal}× a week goal`}
+          detail={`This week ${Math.min(data.workouts.thisWeek, 99)}/${data.workouts.goal}`}
+          progress={Math.min(1, data.workouts.thisWeek / data.workouts.goal)}
+          href="/settings"
+        />
+      </View>
 
-      <Section title="History">
-        {data.history.length === 0 ? (
-          <Text style={[styles.empty, { color: muted }]}>Finished workouts will show up here.</Text>
-        ) : (
-          data.history.map((session) => <HistoryRow key={session.id} session={session} />)
-        )}
-      </Section>
+      <View style={styles.section}>
+        <SectionHeader title="Last 7 days" />
+        <WeekStats history={data.history} now={data.loadedAt} />
+      </View>
+
+      <View style={styles.section}>
+        <SectionHeader title="Muscle recovery" />
+        <RecoveryCard recovery={data.recovery} now={data.loadedAt} />
+      </View>
     </ScrollView>
   );
 }
 
-function Section({
-  title,
-  action,
-  children,
+function StreakCard({
+  icon,
+  value,
+  unit,
+  label,
+  detail,
+  progress,
+  href,
 }: {
-  title: string;
-  action?: ReactNode;
-  children: ReactNode;
+  icon: { ios: string; material: string };
+  value: number;
+  unit: string;
+  label: string;
+  detail: string;
+  progress?: number;
+  href: '/nutrition' | '/settings';
 }) {
-  return (
-    <View style={styles.section}>
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>{title}</Text>
-        {action}
-      </View>
-      {children}
-    </View>
-  );
-}
-
-function WorkoutCard({ workout, onStart }: { workout: WorkoutListItem; onStart: () => void }) {
-  const border = useThemeColor({}, 'border');
-  const muted = useThemeColor({}, 'muted');
   const tint = useThemeColor({}, 'tint');
-  const background = useThemeColor({}, 'background');
-
-  const details = [
-    `${workout.exerciseCount} ${workout.exerciseCount === 1 ? 'exercise' : 'exercises'}`,
-    workout.lastPerformedAt ? `Last done ${formatDay(workout.lastPerformedAt)}` : 'Not done yet',
-  ];
+  const muted = useThemeColor({}, 'muted');
+  const track = useThemeColor({}, 'cardRaised');
+  const idle = useThemeColor({}, 'bodyIdle');
 
   return (
-    <View style={[styles.card, { borderColor: border }]}>
-      <Link href={{ pathname: '/workout-form', params: { id: workout.id } }} asChild>
-        <Pressable style={({ pressed }) => [styles.cardText, pressed && styles.pressed]}>
-          <Text style={styles.cardTitle}>{workout.name}</Text>
-          {workout.muscleGroups.length > 0 && (
-            <Text style={[styles.cardDetail, { color: muted }]} numberOfLines={1}>
-              {workout.muscleGroups.map((m) => MUSCLE_LABELS[m]).join(', ')}
-            </Text>
-          )}
-          <Text style={[styles.cardDetail, { color: muted }]}>{details.join(' · ')}</Text>
-        </Pressable>
-      </Link>
-      <Pressable
-        onPress={onStart}
-        disabled={workout.exerciseCount === 0}
-        accessibilityLabel={`Start ${workout.name}`}
-        style={({ pressed }) => [
-          styles.startButton,
-          { backgroundColor: tint },
-          (pressed || workout.exerciseCount === 0) && styles.pressed,
-        ]}>
-        <Text style={[styles.startLabel, { color: background }]}>Start</Text>
-      </Pressable>
-    </View>
+    <PressableLink
+      href={href}
+      accessibilityLabel={`${label}: ${value} ${unit} streak. ${detail}`}
+      style={({ pressed }) => [styles.streakPressable, pressed && styles.pressed]}>
+      <Card style={styles.streakCard}>
+        <View style={styles.streakTop}>
+          <SymbolView
+            name={{ ios: icon.ios as any, android: icon.material as any, web: icon.material as any }}
+            size={20}
+            tintColor={value > 0 ? tint : idle}
+          />
+          <Text style={[styles.streakLabel, { color: muted }]} numberOfLines={1}>
+            {label}
+          </Text>
+        </View>
+        <Text style={styles.streakValue}>
+          {value}
+          <Text style={[styles.streakUnit, { color: muted }]}> {unit}</Text>
+        </Text>
+        {progress != null && (
+          <View style={[styles.streakTrack, { backgroundColor: track }]}>
+            <View style={[styles.streakFill, { width: `${progress * 100}%`, backgroundColor: tint }]} />
+          </View>
+        )}
+        <Text style={[styles.streakDetail, { color: muted }]} numberOfLines={1}>
+          {detail}
+        </Text>
+      </Card>
+    </PressableLink>
   );
 }
 
-function HistoryRow({ session }: { session: SessionSummary }) {
+function RecoveryCard({ recovery, now }: { recovery: Record<MuscleGroup, MuscleRecovery>; now: number }) {
   const muted = useThemeColor({}, 'muted');
-  const border = useThemeColor({}, 'border');
+  const surface = useThemeColor({}, 'cardRaised');
+
+  const trained = Object.values(recovery)
+    .filter((r): r is MuscleRecovery & { lastTrainedAt: number } => r.lastTrainedAt != null)
+    .sort((a, b) => b.lastTrainedAt - a.lastTrainedAt);
+  const fresh = Object.values(recovery).filter((r) => r.lastTrainedAt == null);
+
+  const label =
+    trained.length === 0
+      ? 'Body diagram: every muscle is fresh.'
+      : `Body diagram. ${trained.map((r) => `${MUSCLE_LABELS[r.muscle]} trained ${trainedAgo(r.lastTrainedAt, now)}`).join('. ')}.`;
 
   return (
-    <Link href={sessionHref(session.id)} asChild>
-      <Pressable
-        style={({ pressed }) => [
-          styles.historyRow,
-          { borderBottomColor: border },
-          pressed && styles.pressed,
-        ]}>
-        <View style={styles.historyHeader}>
-          <Text style={styles.historyName}>{session.name}</Text>
-          <Text style={[styles.historyDate, { color: muted }]}>{formatDay(session.startedAt)}</Text>
+    <Card style={styles.recovery}>
+      <BodyMap fills={recoveryFills(recovery, now)} height={230} accessibilityLabel={label} />
+      <RecoveryLegend />
+      {trained.length > 0 ? (
+        <View style={styles.muscleList}>
+          {trained.map((r) => (
+            <View key={r.muscle} style={[styles.muscleChip, { backgroundColor: surface }]}>
+              <View
+                style={[styles.dot, { backgroundColor: recoveryColor(recoveryAmount(r.lastTrainedAt, now)) }]}
+              />
+              <Text style={styles.muscleName}>{MUSCLE_LABELS[r.muscle]}</Text>
+              <Text style={[styles.muscleAgo, { color: muted }]}>{trainedAgo(r.lastTrainedAt, now)}</Text>
+            </View>
+          ))}
         </View>
-        <Text style={[styles.cardDetail, { color: muted }]}>
-          {formatDuration(session.endedAt - session.startedAt)} · {session.setCount}{' '}
-          {session.setCount === 1 ? 'set' : 'sets'}
+      ) : (
+        <Text style={[styles.hint, { color: muted }]}>
+          No workouts in the last 7 days. Every muscle is fresh and ready to go.
         </Text>
-        {session.exerciseNames.length > 0 && (
-          <Text style={[styles.cardDetail, { color: muted }]} numberOfLines={1}>
-            {session.exerciseNames.join(', ')}
-          </Text>
-        )}
-      </Pressable>
-    </Link>
+      )}
+      {trained.length > 0 && fresh.length > 0 && (
+        <Text style={[styles.hint, { color: muted }]}>
+          Fresh: {fresh.map((r) => MUSCLE_LABELS[r.muscle]).join(', ')}
+        </Text>
+      )}
+    </Card>
   );
 }
 
@@ -229,108 +219,95 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
-    gap: 24,
+    paddingTop: 4,
+    gap: 18,
     paddingBottom: 40,
   },
-  transparent: {
-    flex: 1,
-    backgroundColor: 'transparent',
-  },
   pressed: {
-    opacity: 0.6,
+    opacity: 0.7,
   },
-  activeCard: {
-    borderRadius: 12,
-    padding: 16,
+  eyebrow: {
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 1,
+    marginBottom: -6,
+  },
+  streaks: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  streakPressable: {
+    flex: 1,
+  },
+  streakCard: {
+    flex: 1,
+    gap: 6,
+    padding: 14,
+  },
+  streakTop: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 6,
   },
-  activeLabel: {
-    fontSize: 13,
-    opacity: 0.85,
+  streakLabel: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: '700',
   },
-  activeName: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  activeTime: {
-    fontSize: 16,
+  streakValue: {
+    fontSize: 30,
+    fontWeight: '800',
     fontVariant: ['tabular-nums'],
   },
-  activeResume: {
-    fontSize: 16,
-    fontWeight: '600',
+  streakUnit: {
+    fontSize: 15,
+    fontWeight: '700',
   },
-  primaryButton: {
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: 'center',
+  streakTrack: {
+    height: 5,
+    borderRadius: 3,
+    overflow: 'hidden',
   },
-  primaryLabel: {
-    fontSize: 17,
-    fontWeight: '600',
+  streakFill: {
+    height: 5,
+    borderRadius: 3,
+  },
+  streakDetail: {
+    fontSize: 12,
   },
   section: {
     gap: 10,
   },
-  sectionHeader: {
+  recovery: {
+    gap: 14,
+  },
+  muscleList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  muscleChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 6,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
   },
-  sectionTitle: {
-    fontSize: 20,
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  muscleName: {
+    fontSize: 13,
     fontWeight: '700',
   },
-  empty: {
-    fontSize: 14,
+  muscleAgo: {
+    fontSize: 12,
   },
-  card: {
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  cardText: {
-    flex: 1,
-    gap: 2,
-  },
-  cardTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-  },
-  cardDetail: {
+  hint: {
     fontSize: 13,
-  },
-  startButton: {
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  startLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  historyRow: {
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    gap: 2,
-  },
-  historyHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 8,
-    backgroundColor: 'transparent',
-  },
-  historyName: {
-    fontSize: 16,
-    fontWeight: '500',
-    flex: 1,
-  },
-  historyDate: {
-    fontSize: 14,
+    lineHeight: 18,
   },
 });

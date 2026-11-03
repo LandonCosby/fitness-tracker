@@ -50,7 +50,11 @@ export default function ExercisePickerScreen() {
         <View
           style={[
             styles.footer,
-            { paddingBottom: Math.max(insets.bottom, 12), borderTopColor: border },
+            {
+              paddingBottom: Math.max(insets.bottom, 12),
+              borderTopColor: border,
+              backgroundColor: background,
+            },
           ]}>
           <Pressable
             onPress={done}
@@ -86,7 +90,7 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
   },
   button: {
-    borderRadius: 10,
+    borderRadius: 14,
     paddingVertical: 14,
     alignItems: 'center',
   },

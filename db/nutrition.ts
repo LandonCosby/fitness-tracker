@@ -1,7 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 import { newId, now } from './records';
-import type { Food, FoodEntry, Meal } from './types';
+import type { Food, FoodCategory, FoodEntry, Meal } from './types';
 
 export const MEALS: readonly Meal[] = ['breakfast', 'lunch', 'dinner', 'snack'];
 
@@ -23,9 +23,25 @@ export type Nutrients = {
 export type FoodValues = Nutrients & {
   name: string;
   servingLabel: string | null;
+  /** Weight of one serving in grams, when known, so it can be logged by weight. */
+  servingGrams?: number | null;
 };
 
-export type SavedFood = FoodValues & { id: string };
+export const FOOD_CATEGORIES: readonly FoodCategory[] = ['ingredient', 'fast_food', 'meal', 'custom'];
+
+export const FOOD_CATEGORY_LABELS: Record<FoodCategory, string> = {
+  ingredient: 'Ingredients',
+  fast_food: 'Fast food',
+  meal: 'Meals',
+  custom: 'Custom',
+};
+
+export type SavedFood = FoodValues & {
+  id: string;
+  category: FoodCategory;
+  brand: string | null;
+  servingGrams: number | null;
+};
 
 export type LoggedFood = FoodValues & {
   id: string;
@@ -82,6 +98,9 @@ function toSavedFood(row: Food): SavedFood {
     proteinG: row.protein_g,
     carbsG: row.carbs_g,
     fatG: row.fat_g,
+    category: row.category,
+    brand: row.brand,
+    servingGrams: row.serving_grams,
   };
 }
 
@@ -94,6 +113,7 @@ function toLoggedFood(row: FoodEntry): LoggedFood {
     name: row.name,
     servingLabel: row.serving_label,
     servings: row.servings,
+    servingGrams: row.serving_grams,
     calories: row.calories,
     proteinG: row.protein_g,
     carbsG: row.carbs_g,
@@ -108,18 +128,45 @@ function cleanLabel(label: string | null): string | null {
 
 // --- My foods ---
 
-// Recently used first. Escapes LIKE wildcards so "%" matches literally.
-export async function searchFoods(db: SQLiteDatabase, search = '', limit = 50): Promise<SavedFood[]> {
-  const pattern = `%${search.trim().replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+// Recently used first, then by name. Optionally limited to one tab (category) and, for
+// fast food, one restaurant. Search also matches the restaurant. Escapes LIKE wildcards.
+export async function searchFoods(
+  db: SQLiteDatabase,
+  options: { search?: string; category?: FoodCategory; brand?: string | null; limit?: number } = {}
+): Promise<SavedFood[]> {
+  const pattern = `%${(options.search ?? '').trim().replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+  const conditions = [
+    'deleted_at IS NULL',
+    `(name LIKE ? ESCAPE '\\' OR COALESCE(brand, '') LIKE ? ESCAPE '\\')`,
+  ];
+  const params: (string | number)[] = [pattern, pattern];
+  if (options.category) {
+    conditions.push('category = ?');
+    params.push(options.category);
+  }
+  if (options.brand) {
+    conditions.push('brand = ?');
+    params.push(options.brand);
+  }
+  params.push(options.limit ?? 500);
   const rows = await db.getAllAsync<Food>(
     `SELECT * FROM foods
-     WHERE deleted_at IS NULL AND name LIKE ? ESCAPE '\\'
-     ORDER BY last_used_at IS NULL, last_used_at DESC, name COLLATE NOCASE
+     WHERE ${conditions.join(' AND ')}
+     ORDER BY last_used_at IS NULL, last_used_at DESC, brand COLLATE NOCASE, name COLLATE NOCASE
      LIMIT ?`,
-    pattern,
-    limit
+    params
   );
   return rows.map(toSavedFood);
+}
+
+// Restaurants in the Fast food tab, alphabetically.
+export async function listFoodBrands(db: SQLiteDatabase): Promise<string[]> {
+  const rows = await db.getAllAsync<{ brand: string }>(
+    `SELECT DISTINCT brand FROM foods
+     WHERE deleted_at IS NULL AND category = 'fast_food' AND brand IS NOT NULL
+     ORDER BY brand COLLATE NOCASE`
+  );
+  return rows.map((r) => r.brand);
 }
 
 export async function getFood(db: SQLiteDatabase, id: string): Promise<SavedFood | null> {
@@ -130,16 +177,18 @@ export async function getFood(db: SQLiteDatabase, id: string): Promise<SavedFood
   return row ? toSavedFood(row) : null;
 }
 
-// Saves a food to My foods. A food with the same name and serving (ignoring case) is
-// updated instead of duplicated.
+// Saves a food to the Custom tab. A custom food with the same name and serving (ignoring
+// case) is updated instead of duplicated; built-in foods are never changed.
 export async function saveFood(db: SQLiteDatabase, values: FoodValues): Promise<string> {
   const name = values.name.trim();
   const servingLabel = cleanLabel(values.servingLabel);
+  const servingGrams =
+    values.servingGrams != null && values.servingGrams > 0 ? values.servingGrams : null;
   const timestamp = now();
 
   const existing = await db.getFirstAsync<{ id: string }>(
     `SELECT id FROM foods
-     WHERE deleted_at IS NULL AND name = ? COLLATE NOCASE
+     WHERE deleted_at IS NULL AND category = 'custom' AND name = ? COLLATE NOCASE
        AND COALESCE(serving_label, '') = COALESCE(?, '') COLLATE NOCASE`,
     name,
     servingLabel
@@ -148,7 +197,7 @@ export async function saveFood(db: SQLiteDatabase, values: FoodValues): Promise<
   if (existing) {
     await db.runAsync(
       `UPDATE foods SET name = ?, serving_label = ?, calories = ?, protein_g = ?, carbs_g = ?,
-         fat_g = ?, last_used_at = ?, updated_at = ?
+         fat_g = ?, serving_grams = ?, last_used_at = ?, updated_at = ?
        WHERE id = ?`,
       name,
       servingLabel,
@@ -156,6 +205,7 @@ export async function saveFood(db: SQLiteDatabase, values: FoodValues): Promise<
       values.proteinG,
       values.carbsG,
       values.fatG,
+      servingGrams,
       timestamp,
       timestamp,
       existing.id
@@ -166,9 +216,9 @@ export async function saveFood(db: SQLiteDatabase, values: FoodValues): Promise<
   const id = newId();
   await db.runAsync(
     `INSERT INTO foods
-       (id, name, serving_label, calories, protein_g, carbs_g, fat_g, last_used_at,
-        created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (id, name, serving_label, calories, protein_g, carbs_g, fat_g, category, serving_grams,
+        last_used_at, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, 'custom', ?, ?, ?, ?)`,
     id,
     name,
     servingLabel,
@@ -176,6 +226,7 @@ export async function saveFood(db: SQLiteDatabase, values: FoodValues): Promise<
     values.proteinG,
     values.carbsG,
     values.fatG,
+    servingGrams,
     timestamp,
     timestamp,
     timestamp
@@ -226,9 +277,9 @@ export async function createEntry(db: SQLiteDatabase, input: EntryInput): Promis
   await db.withTransactionAsync(async () => {
     await db.runAsync(
       `INSERT INTO food_entries
-         (id, date, meal, food_id, name, serving_label, servings, calories, protein_g, carbs_g,
-          fat_g, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         (id, date, meal, food_id, name, serving_label, servings, serving_grams, calories,
+          protein_g, carbs_g, fat_g, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       id,
       input.date,
       input.meal,
@@ -236,6 +287,7 @@ export async function createEntry(db: SQLiteDatabase, input: EntryInput): Promis
       input.name.trim(),
       cleanLabel(input.servingLabel),
       input.servings,
+      input.servingGrams ?? null,
       input.calories,
       input.proteinG,
       input.carbsG,

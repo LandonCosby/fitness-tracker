@@ -12,36 +12,49 @@ function tabIcon(ios: string, material: string) {
     <SymbolView
       name={{ ios: ios as any, android: material as any, web: material as any }}
       tintColor={color}
-      size={28}
+      size={26}
     />
   );
   TabIcon.displayName = `TabIcon(${material})`;
   return TabIcon;
 }
 
+// A round icon button in the tab header.
 function HeaderIconLink({
   href,
   label,
   ios,
   material,
+  accent = false,
 }: {
   href: Href;
   label: string;
   ios: string;
   material: string;
+  accent?: boolean;
 }) {
-  const colorScheme = useColorScheme();
+  const palette = Colors[useColorScheme()];
 
   return (
     <Link href={href} asChild>
-      <Pressable style={{ marginRight: 15 }} accessibilityLabel={label}>
+      <Pressable accessibilityLabel={label} hitSlop={6}>
         {({ pressed }) => (
-          <SymbolView
-            name={{ ios: ios as any, android: material as any, web: material as any }}
-            size={25}
-            tintColor={Colors[colorScheme].text}
-            style={{ opacity: pressed ? 0.5 : 1 }}
-          />
+          <View
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 18,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: accent ? palette.tintSoft : palette.card,
+              opacity: pressed ? 0.6 : 1,
+            }}>
+            <SymbolView
+              name={{ ios: ios as any, android: material as any, web: material as any }}
+              size={20}
+              tintColor={accent ? palette.tint : palette.text}
+            />
+          </View>
         )}
       </Pressable>
     </Link>
@@ -49,25 +62,37 @@ function HeaderIconLink({
 }
 
 function SettingsButton() {
-  return <HeaderIconLink href="/settings" label="Settings" ios="gearshape" material="settings" />;
+  return (
+    <View style={{ marginRight: 16 }}>
+      <HeaderIconLink href="/settings" label="Settings" ios="gearshape.fill" material="settings" />
+    </View>
+  );
 }
 
 function AddAndSettingsButtons({ href, label }: { href: Href; label: string }) {
   return (
-    <View style={{ flexDirection: 'row' }}>
-      <HeaderIconLink href={href} label={label} ios="plus" material="add" />
-      <SettingsButton />
+    <View style={{ flexDirection: 'row', gap: 10, marginRight: 16 }}>
+      <HeaderIconLink href={href} label={label} ios="plus" material="add" accent />
+      <HeaderIconLink href="/settings" label="Settings" ios="gearshape.fill" material="settings" />
     </View>
   );
 }
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
+  const palette = Colors[useColorScheme()];
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme].tint,
+        tabBarActiveTintColor: palette.tint,
+        tabBarInactiveTintColor: palette.tabIconDefault,
+        tabBarStyle: { backgroundColor: palette.card, borderTopColor: palette.border },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
+        // Big, left-aligned screen titles.
+        headerTitleAlign: 'left',
+        headerTitleStyle: { fontSize: 30, fontWeight: '800', letterSpacing: -0.5 },
+        headerStyle: { backgroundColor: palette.background },
+        headerShadowVisible: false,
         // Disable the static render of the header on web
         // to prevent a hydration error in React Navigation v6.
         headerShown: useClientOnlyValue(false, true),
@@ -76,8 +101,22 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
+          title: 'Forge',
+          tabBarLabel: 'Home',
+          tabBarIcon: tabIcon('house.fill', 'home'),
+          headerTitleStyle: {
+            fontSize: 30,
+            fontWeight: '900',
+            letterSpacing: -0.5,
+            color: palette.tint,
+          },
+        }}
+      />
+      <Tabs.Screen
+        name="workouts"
+        options={{
           title: 'Workouts',
-          tabBarIcon: tabIcon('dumbbell', 'fitness_center'),
+          tabBarIcon: tabIcon('dumbbell.fill', 'fitness_center'),
           headerRight: () => <AddAndSettingsButtons href="/workout-form" label="New workout" />,
         }}
       />
@@ -91,7 +130,16 @@ export default function TabLayout() {
       />
       <Tabs.Screen
         name="nutrition"
-        options={{ title: 'Nutrition', tabBarIcon: tabIcon('fork.knife', 'restaurant') }}
+        options={{
+          title: 'Nutrition',
+          tabBarIcon: tabIcon('fork.knife', 'restaurant'),
+          headerRight: () => (
+            <View style={{ flexDirection: 'row', gap: 10, marginRight: 16 }}>
+              <HeaderIconLink href="/nutrition-goals" label="Goals and units" ios="target" material="track_changes" accent />
+              <HeaderIconLink href="/settings" label="Settings" ios="gearshape.fill" material="settings" />
+            </View>
+          ),
+        }}
       />
       <Tabs.Screen
         name="progress"

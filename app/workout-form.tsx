@@ -3,6 +3,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet } from 'react-native';
 
+import WorkedMuscles from '@/components/body/WorkedMuscles';
 import Chip from '@/components/Chip';
 import IconButton from '@/components/IconButton';
 import { Text, TextInput, View, useThemeColor } from '@/components/Themed';
@@ -16,7 +17,9 @@ import {
   getWorkout,
   saveWorkout,
 } from '@/db/workouts';
+import { findPreset, getPresetExercises } from '@/db/workoutPresets';
 import { openExercisePicker } from '@/lib/exercisePicker';
+import { openPresetPicker } from '@/lib/presetPicker';
 
 type DraftExercise = {
   key: string;
@@ -45,8 +48,9 @@ export default function WorkoutFormScreen() {
   const nextKey = useRef(0);
 
   const tint = useThemeColor({}, 'tint');
+  const tintSoft = useThemeColor({}, 'tintSoft');
   const background = useThemeColor({}, 'background');
-  const border = useThemeColor({}, 'border');
+  const card = useThemeColor({}, 'card');
   const danger = useThemeColor({}, 'danger');
   const muted = useThemeColor({}, 'muted');
 
@@ -101,6 +105,38 @@ export default function WorkoutFormScreen() {
       },
       { muscles: muscleGroups }
     );
+  };
+
+  // Fills the form from a prebuilt workout; everything stays editable before saving.
+  const choosePreset = () => {
+    openPresetPicker(async (presetKey) => {
+      const preset = findPreset(presetKey);
+      if (!preset) return;
+      const presetExercises = await getPresetExercises(db, preset);
+      const apply = () => {
+        setName(preset.name);
+        setMuscleGroups(preset.muscleGroups);
+        setExercises(
+          presetExercises.map((e) => ({
+            key: makeKey(),
+            exerciseId: e.exerciseId,
+            name: e.name,
+            isTimed: e.isTimed,
+            targetSets: e.targetSets,
+            target: String((e.isTimed ? e.targetSeconds : e.targetReps) ?? ''),
+          }))
+        );
+        setError(null);
+      };
+      if (exercises.length === 0 && !name.trim()) {
+        apply();
+        return;
+      }
+      Alert.alert(`Use ${preset.name}?`, 'This replaces the name, body parts and exercises you have so far.', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Replace', onPress: apply },
+      ]);
+    });
   };
 
   const updateExercise = (key: string, change: Partial<DraftExercise>) => {
@@ -171,6 +207,7 @@ export default function WorkoutFormScreen() {
       style={styles.container}
       contentContainerStyle={styles.content}
       keyboardShouldPersistTaps="handled"
+      contentInsetAdjustmentBehavior="automatic"
       automaticallyAdjustKeyboardInsets>
       <Stack.Screen
         options={{
@@ -185,6 +222,21 @@ export default function WorkoutFormScreen() {
         }}
       />
 
+      {!isEditing && (
+        <Pressable
+          onPress={choosePreset}
+          accessibilityRole="button"
+          style={({ pressed }) => [styles.presetBanner, { backgroundColor: tintSoft }, pressed && styles.dimmed]}>
+          <View style={styles.presetText}>
+            <Text style={[styles.presetTitle, { color: tint }]}>Start from a prebuilt workout</Text>
+            <Text style={[styles.hint, { color: muted }]}>
+              Push/Pull/Legs, Upper/Lower, Full body, Home. Edit it however you like.
+            </Text>
+          </View>
+          <Text style={[styles.presetChevron, { color: tint }]}>›</Text>
+        </Pressable>
+      )}
+
       <View style={styles.field}>
         <Text style={styles.label}>Name</Text>
         <TextInput
@@ -194,7 +246,6 @@ export default function WorkoutFormScreen() {
             setError(null);
           }}
           placeholder="e.g. Push Day"
-          autoFocus={!isEditing}
           autoCapitalize="words"
           returnKeyType="done"
         />
@@ -223,10 +274,15 @@ export default function WorkoutFormScreen() {
         </View>
       </View>
 
+      <WorkedMuscles
+        exerciseIds={exercises.map((e) => e.exerciseId)}
+        bodyParts={muscleGroups}
+      />
+
       <View style={styles.field}>
         <Text style={styles.label}>Exercises</Text>
         {exercises.map((exercise, index) => (
-          <View key={exercise.key} style={[styles.exercise, { borderColor: border }]}>
+          <View key={exercise.key} style={[styles.exercise, { backgroundColor: card }]}>
             <View style={styles.exerciseHeader}>
               <Text style={styles.exerciseName}>
                 {index + 1}. {exercise.name}
@@ -349,6 +405,25 @@ const styles = StyleSheet.create({
   field: {
     gap: 8,
   },
+  presetBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderRadius: 18,
+    padding: 16,
+  },
+  presetText: {
+    flex: 1,
+    gap: 2,
+  },
+  presetTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  presetChevron: {
+    fontSize: 28,
+    fontWeight: '600',
+  },
   label: {
     fontSize: 15,
     fontWeight: '600',
@@ -362,9 +437,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   exercise: {
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
+    borderRadius: 18,
+    padding: 14,
     gap: 10,
   },
   exerciseHeader: {
@@ -414,7 +488,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   saveButton: {
-    borderRadius: 10,
+    borderRadius: 14,
     paddingVertical: 14,
     alignItems: 'center',
   },
@@ -424,7 +498,7 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: 14,
     paddingVertical: 12,
     alignItems: 'center',
   },

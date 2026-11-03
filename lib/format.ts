@@ -89,3 +89,20 @@ export function formatSet(set: SetValues, unit: WeightUnit): string {
   if (effort != null) return `${effort} ${effort === 1 ? 'rep' : 'reps'}`;
   return weight ?? '—';
 }
+
+const GRAMS_PER_OUNCE = 28.3495;
+
+export const gramsToOunces = (grams: number) => grams / GRAMS_PER_OUNCE;
+export const ouncesToGrams = (ounces: number) => ounces * GRAMS_PER_OUNCE;
+
+// How much was eaten: "1 × 4 oz (112 g)", or "150 g" when it was logged by weight
+// (servings that aren't a whole quarter).
+export function formatAmount(
+  servings: number,
+  servingLabel: string | null,
+  servingGrams: number | null | undefined
+): string {
+  const byWeight = servingGrams != null && Math.abs(servings * 4 - Math.round(servings * 4)) > 0.01;
+  if (byWeight) return `${Math.round(servings * servingGrams)} g`;
+  return formatServings(servings, servingLabel);
+}

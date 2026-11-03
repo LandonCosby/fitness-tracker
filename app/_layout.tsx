@@ -1,11 +1,13 @@
 import { useFonts } from 'expo-font';
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider, type Theme } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { SQLiteProvider } from 'expo-sqlite';
-import { useEffect } from 'react';
+import { StatusBar } from 'expo-status-bar';
+import { useEffect, useMemo } from 'react';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
+import Colors from '@/constants/Colors';
 import { initDatabase } from '@/db/init';
 import { WeightUnitProvider } from '@/hooks/useWeightUnit';
 
@@ -47,14 +49,40 @@ export default function RootLayout() {
 
 const MODAL = { presentation: 'modal', headerShown: false } as const;
 
+// React Navigation paints screen backgrounds, headers and the tab bar from this theme,
+// so they match the app palette.
+function navigationTheme(scheme: 'light' | 'dark'): Theme {
+  const base = scheme === 'dark' ? DarkTheme : DefaultTheme;
+  const palette = Colors[scheme];
+  return {
+    ...base,
+    colors: {
+      ...base.colors,
+      primary: palette.tint,
+      background: palette.background,
+      card: palette.background,
+      text: palette.text,
+      border: palette.border,
+      notification: palette.tint,
+    },
+  };
+}
+
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
+  const theme = useMemo(() => navigationTheme(colorScheme), [colorScheme]);
 
   return (
     <SQLiteProvider databaseName="fitness.db" onInit={initDatabase}>
       <WeightUnitProvider>
-        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-          <Stack>
+        <ThemeProvider value={theme}>
+          <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+          <Stack
+            screenOptions={{
+              headerShadowVisible: false,
+              headerTitleStyle: { fontWeight: '700' },
+              headerBackButtonDisplayMode: 'minimal',
+            }}>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="exercise/[id]" options={{ title: 'Exercise' }} />
             <Stack.Screen name="workout-form" options={{ title: 'Workout' }} />
@@ -63,6 +91,10 @@ function RootLayoutNav() {
             <Stack.Screen name="settings" options={MODAL} />
             <Stack.Screen name="exercise-form" options={MODAL} />
             <Stack.Screen name="exercise-picker" options={MODAL} />
+            <Stack.Screen name="performed-exercises" options={MODAL} />
+            <Stack.Screen name="start-workout" options={MODAL} />
+            <Stack.Screen name="workout-presets" options={MODAL} />
+            <Stack.Screen name="nutrition-goals" options={MODAL} />
             <Stack.Screen name="food-add" options={MODAL} />
             <Stack.Screen name="food-entry" options={MODAL} />
             <Stack.Screen name="weigh-in" options={MODAL} />

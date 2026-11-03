@@ -4,8 +4,11 @@ import { useCallback, useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 
 import Chip from '@/components/Chip';
+import PressableLink from '@/components/PressableLink';
 import RecordTiles, { formatRecord, recordKindsFor } from '@/components/RecordTiles';
+import StrengthRank from '@/components/StrengthRank';
 import { Text, View, useThemeColor } from '@/components/Themed';
+import { Card, SectionHeader } from '@/components/ui';
 import BarChart from '@/components/charts/BarChart';
 import { ChartWithData } from '@/components/charts/ChartFrame';
 import LineChart from '@/components/charts/LineChart';
@@ -78,6 +81,7 @@ export default function ProgressScreen() {
   const [weeklyMetric, setWeeklyMetric] = useState<'workouts' | 'sets'>('workouts');
   const [nutritionMetric, setNutritionMetric] = useState<'calories' | 'protein'>('calories');
   const tint = useThemeColor({}, 'tint');
+  const surface = useThemeColor({}, 'cardRaised');
   const muted = useThemeColor({}, 'muted');
 
   useFocusEffect(
@@ -132,7 +136,7 @@ export default function ProgressScreen() {
   );
 
   const chooseExercise = () => {
-    openExercisePicker(([id]) => id && setExerciseId(id), { single: true });
+    openExercisePicker(([id]) => id && setExerciseId(id), { single: true, performedOnly: true });
   };
 
   if (!data) return <View style={styles.container} />;
@@ -167,7 +171,12 @@ export default function ProgressScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* One range filter above everything it scopes. */}
+      <View style={styles.section}>
+        <SectionHeader title="Strength rank" />
+        <StrengthRank />
+      </View>
+
+      {/* One range filter above everything it scopes (the strength rank above is all-time). */}
       <View style={styles.ranges} accessibilityRole="radiogroup">
         {RANGES.map((r) => (
           <Chip key={r.key} label={r.key} selected={range === r.key} onPress={() => setRange(r.key)} />
@@ -179,13 +188,13 @@ export default function ProgressScreen() {
         subtitle={exercise ? METRIC_TITLES[exercise.progress.metric] : undefined}>
         <Pressable
           onPress={chooseExercise}
-          style={({ pressed }) => [styles.picker, { borderColor: tint }, pressed && styles.pressed]}
+          style={({ pressed }) => [styles.picker, { backgroundColor: surface }, pressed && styles.pressed]}
           accessibilityRole="button"
           accessibilityLabel={exercise ? `Exercise: ${exercise.name}. Change` : 'Choose an exercise'}>
           <Text style={styles.pickerLabel} numberOfLines={1}>
             {exercise?.name ?? 'Choose an exercise'}
           </Text>
-          <Text style={{ color: tint }}>Change</Text>
+          <Text style={[styles.pickerAction, { color: tint }]}>Change</Text>
         </Pressable>
         {exercise && (
           <>
@@ -301,7 +310,9 @@ export default function ProgressScreen() {
         {data.records.length === 0 ? (
           <Text style={[styles.empty, { color: muted }]}>Records appear after your first workout.</Text>
         ) : (
-          data.records.map((item) => <RecordRow key={item.exerciseId} item={item} />)
+          data.records.map((item, index) => (
+            <RecordRow key={item.exerciseId} item={item} first={index === 0} />
+          ))
         )}
       </Section>
     </ScrollView>
@@ -322,12 +333,11 @@ function Section({
   const muted = useThemeColor({}, 'muted');
   return (
     <View style={styles.section}>
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>{title}</Text>
-        {action}
-      </View>
-      {subtitle && <Text style={[styles.subtitle, { color: muted }]}>{subtitle}</Text>}
-      {children}
+      <SectionHeader title={title} action={action} />
+      <Card style={styles.sectionCard}>
+        {subtitle && <Text style={[styles.subtitle, { color: muted }]}>{subtitle}</Text>}
+        {children}
+      </Card>
     </View>
   );
 }
@@ -350,7 +360,7 @@ function Toggle<T extends string>({
   );
 }
 
-function RecordRow({ item }: { item: RecordsListItem }) {
+function RecordRow({ item, first }: { item: RecordsListItem; first: boolean }) {
   const { unit } = useWeightUnit();
   const muted = useThemeColor({}, 'muted');
   const border = useThemeColor({}, 'border');
@@ -360,9 +370,13 @@ function RecordRow({ item }: { item: RecordsListItem }) {
   const oneRepMax = !item.isTimed ? formatRecord('bestOneRepMax', item.records, unit) : null;
 
   return (
-    <Link href={{ pathname: '/exercise/[id]', params: { id: item.exerciseId } }} asChild>
-      <Pressable
-        style={({ pressed }) => [styles.recordRow, { borderBottomColor: border }, pressed && styles.pressed]}>
+    <PressableLink
+        href={{ pathname: '/exercise/[id]', params: { id: item.exerciseId } }}
+        style={({ pressed }) => [
+          styles.recordRow,
+          !first && { borderTopColor: border, borderTopWidth: StyleSheet.hairlineWidth },
+          pressed && styles.pressed,
+        ]}>
         <View style={styles.recordText}>
           <Text style={styles.recordName}>{item.name}</Text>
           <Text style={[styles.recordDetail, { color: muted }]}>
@@ -375,8 +389,7 @@ function RecordRow({ item }: { item: RecordsListItem }) {
             <Text style={[styles.recordDetail, { color: muted }]}>1RM ≈ {oneRepMax}</Text>
           )}
         </View>
-      </Pressable>
-    </Link>
+    </PressableLink>
   );
 }
 
@@ -386,7 +399,8 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
-    gap: 28,
+    paddingTop: 4,
+    gap: 24,
     paddingBottom: 40,
   },
   ranges: {
@@ -396,19 +410,11 @@ const styles = StyleSheet.create({
   section: {
     gap: 10,
   },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '700',
+  sectionCard: {
+    gap: 12,
   },
   subtitle: {
     fontSize: 13,
-    marginTop: -6,
   },
   toggle: {
     flexDirection: 'row',
@@ -418,15 +424,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
   },
   pickerLabel: {
     flex: 1,
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: '700',
+  },
+  pickerAction: {
+    fontSize: 14,
+    fontWeight: '700',
   },
   empty: {
     fontSize: 14,
@@ -436,14 +445,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   recordText: {
     flex: 1,
-    backgroundColor: 'transparent',
   },
   recordName: {
     fontSize: 16,
+    fontWeight: '600',
   },
   recordDetail: {
     fontSize: 12,
@@ -451,11 +459,11 @@ const styles = StyleSheet.create({
   },
   recordValues: {
     alignItems: 'flex-end',
-    backgroundColor: 'transparent',
   },
   recordValue: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '800',
+    fontVariant: ['tabular-nums'],
   },
   pressed: {
     opacity: 0.6,

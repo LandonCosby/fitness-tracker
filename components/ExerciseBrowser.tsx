@@ -1,4 +1,4 @@
-import { Link, useFocusEffect } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { SymbolView } from 'expo-symbols';
 import { useCallback, useState, type ReactNode } from 'react';
@@ -6,6 +6,7 @@ import { FlatList, Pressable, StyleSheet } from 'react-native';
 
 import Badge, { NO_EQUIPMENT_LABEL } from '@/components/Badge';
 import Chip from '@/components/Chip';
+import PressableLink from '@/components/PressableLink';
 import { Text, TextInput, View, useThemeColor } from '@/components/Themed';
 import {
   EQUIPMENT,
@@ -46,6 +47,7 @@ export default function ExerciseBrowser({
   const [noEquipment, setNoEquipment] = useState(false);
   const [exercises, setExercises] = useState<ExerciseListItem[] | null>(null);
   const border = useThemeColor({}, 'border');
+  const card = useThemeColor({}, 'card');
   const muted = useThemeColor({}, 'muted');
 
   const filterCount = muscles.length + equipment.length + (noEquipment ? 1 : 0);
@@ -95,7 +97,7 @@ export default function ExerciseBrowser({
         </View>
 
         {showAdvanced && (
-          <View style={[styles.panel, { borderColor: border }]}>
+          <View style={[styles.panel, { backgroundColor: card }]}>
             <FilterGroup title="Muscle group">
               {MUSCLE_GROUPS.map((group) => (
                 <Chip
@@ -166,11 +168,11 @@ export default function ExerciseBrowser({
               <Checkmark checked={selectedIds?.has(item.id) ?? false} />
             </Pressable>
           ) : (
-            <Link href={{ pathname: '/exercise/[id]', params: { id: item.id } }} asChild>
-              <Pressable style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
-                <ExerciseRowContent exercise={item} />
-              </Pressable>
-            </Link>
+            <PressableLink
+              href={{ pathname: '/exercise/[id]', params: { id: item.id } }}
+              style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
+              <ExerciseRowContent exercise={item} />
+            </PressableLink>
           )
         }
       />
@@ -293,7 +295,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: 14,
     paddingHorizontal: 10,
     paddingVertical: 10,
   },
@@ -303,7 +305,7 @@ const styles = StyleSheet.create({
   countBadge: {
     minWidth: 20,
     height: 20,
-    borderRadius: 10,
+    borderRadius: 14,
     paddingHorizontal: 5,
     alignItems: 'center',
     justifyContent: 'center',
@@ -313,9 +315,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   panel: {
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
+    borderRadius: 18,
+    padding: 14,
     gap: 14,
   },
   group: {

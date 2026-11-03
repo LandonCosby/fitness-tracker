@@ -83,6 +83,8 @@ export type WorkoutSet = RecordColumns & {
 
 export type Meal = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 
+export type FoodCategory = 'ingredient' | 'fast_food' | 'meal' | 'custom';
+
 type Macros = {
   calories: number;
   protein_g: number;
@@ -97,6 +99,11 @@ export type Food = RecordColumns &
     name: string;
     /** e.g. "1 cup", "100 g". */
     serving_label: string | null;
+    category: FoodCategory;
+    /** Restaurant, for fast food. */
+    brand: string | null;
+    /** Weight of one serving, when known (allows logging by weight). */
+    serving_grams: number | null;
     last_used_at: number | null;
   };
 
@@ -120,4 +127,5 @@ export type FoodEntry = RecordColumns &
     name: string;
     serving_label: string | null;
     servings: number;
+    serving_grams: number | null;
   };

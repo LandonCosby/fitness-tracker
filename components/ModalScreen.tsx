@@ -66,11 +66,12 @@ const styles = StyleSheet.create({
   },
   close: {
     fontSize: 17,
+    fontWeight: '600',
   },
   title: {
     flex: 1,
     textAlign: 'center',
     fontSize: 17,
-    fontWeight: '600',
+    fontWeight: '700',
   },
 });

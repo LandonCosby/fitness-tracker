@@ -14,7 +14,7 @@ export default function Chip({
 }) {
   const tint = useThemeColor({}, 'tint');
   const background = useThemeColor({}, 'background');
-  const border = useThemeColor({}, 'border');
+  const surface = useThemeColor({}, 'cardRaised');
 
   return (
     <Pressable
@@ -23,8 +23,7 @@ export default function Chip({
       accessibilityState={{ selected }}
       style={({ pressed }) => [
         styles.chip,
-        { borderColor: selected ? tint : border },
-        selected && { backgroundColor: tint },
+        { backgroundColor: selected ? tint : surface },
         pressed && styles.pressed,
       ]}>
       <Text style={[styles.label, selected && { color: background }]}>{label}</Text>
@@ -34,15 +33,15 @@ export default function Chip({
 
 const styles = StyleSheet.create({
   chip: {
-    borderWidth: 1,
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
   },
   pressed: {
     opacity: 0.6,
   },
   label: {
     fontSize: 14,
+    fontWeight: '600',
   },
 });

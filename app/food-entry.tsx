@@ -50,6 +50,7 @@ export default function FoodEntryScreen() {
   const [meal, setMeal] = useState<Meal>(isMeal(params.meal) ? params.meal : mealForTime());
   const [name, setName] = useState(params.name ?? '');
   const [servingLabel, setServingLabel] = useState('');
+  const [servingGrams, setServingGrams] = useState('');
   const [calories, setCalories] = useState('');
   const [protein, setProtein] = useState('');
   const [carbs, setCarbs] = useState('');
@@ -105,9 +106,11 @@ export default function FoodEntryScreen() {
       return setError('Enter calories, or protein/carbs/fat to work them out.');
     if (!servingsValue) return setError('Servings must be more than 0.');
 
+    const gramsValue = parse(servingGrams);
     const values = {
       name: trimmed,
       servingLabel,
+      servingGrams: gramsValue != null && gramsValue > 0 ? gramsValue : null,
       calories: caloriesValue,
       proteinG,
       carbsG,
@@ -145,7 +148,7 @@ export default function FoodEntryScreen() {
     ]);
   };
 
-  const title = isEditing ? 'Edit entry' : 'New food';
+  const title = isEditing ? 'Edit entry' : 'Create food';
 
   if (!loaded) return <ModalScreen title={title}>{null}</ModalScreen>;
 
@@ -183,6 +186,22 @@ export default function FoodEntryScreen() {
             placeholder="e.g. 1 cup, 170 g, 1 bar"
           />
         </View>
+
+        {!isEditing && (
+          <View style={styles.field}>
+            <Text style={styles.label}>Serving weight in grams (optional)</Text>
+            <TextInput
+              value={servingGrams}
+              onChangeText={(text) => setServingGrams(decimalOnly(text))}
+              placeholder="e.g. 170"
+              keyboardType="decimal-pad"
+              maxLength={6}
+            />
+            <Text style={[styles.hint, { color: muted }]}>
+              Lets you log this food by weight (grams or ounces) next time.
+            </Text>
+          </View>
+        )}
 
         <View style={styles.field}>
           <Text style={styles.label}>Per serving</Text>
@@ -259,14 +278,14 @@ export default function FoodEntryScreen() {
         {!isEditing && (
           <View style={styles.switchRow}>
             <View style={styles.switchText}>
-              <Text style={styles.label}>Save to My foods</Text>
+              <Text style={styles.label}>Save to Custom foods</Text>
               <Text style={[styles.hint, { color: muted }]}>Log it again later in one tap.</Text>
             </View>
             <Switch
               value={saveToFoods}
               onValueChange={setSaveToFoods}
               trackColor={{ true: tint }}
-              accessibilityLabel="Save to My foods"
+              accessibilityLabel="Save to Custom foods"
             />
           </View>
         )}
@@ -387,7 +406,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   saveButton: {
-    borderRadius: 10,
+    borderRadius: 14,
     paddingVertical: 14,
     alignItems: 'center',
   },
@@ -397,7 +416,7 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: 14,
     paddingVertical: 12,
     alignItems: 'center',
   },

@@ -1,5 +1,6 @@
 import { Link, Stack, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
+import { SymbolView } from 'expo-symbols';
 import { useCallback, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet } from 'react-native';
 
@@ -8,6 +9,7 @@ import IconButton from '@/components/IconButton';
 import { RECORD_LABELS, formatRecord } from '@/components/RecordTiles';
 import { getNewRecords } from '@/db/progress';
 import { Text, TextInput, View, useThemeColor } from '@/components/Themed';
+import { Button, Card } from '@/components/ui';
 import {
   addExercisesToSession,
   addSet,
@@ -36,7 +38,8 @@ export default function SessionScreen() {
   // undefined while loading, null if it doesn't exist (or was deleted).
   const [session, setSession] = useState<SessionDetail | null | undefined>(undefined);
   const tint = useThemeColor({}, 'tint');
-  const danger = useThemeColor({}, 'danger');
+  const success = useThemeColor({}, 'success');
+  const background = useThemeColor({}, 'background');
   const muted = useThemeColor({}, 'muted');
 
   const reload = useCallback(async () => {
@@ -67,6 +70,10 @@ export default function SessionScreen() {
   }
 
   const active = session.endedAt == null;
+  const allSets = session.exercises.flatMap((e) => e.sets);
+  const totalSets = allSets.length;
+  // Finished workouts only keep completed sets.
+  const doneSets = active ? allSets.filter((s) => s.completed).length : totalSets;
 
   const discard = () => {
     Alert.alert(
@@ -150,31 +157,56 @@ export default function SessionScreen() {
       contentContainerStyle={styles.content}
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="on-drag"
+      contentInsetAdjustmentBehavior="automatic"
       automaticallyAdjustKeyboardInsets>
       <Stack.Screen
         options={{
           title: session.name,
           headerRight: active
             ? () => (
-                <Pressable onPress={finish} hitSlop={8}>
-                  <Text style={[styles.headerButton, { color: tint }]}>Finish</Text>
+                <Pressable
+                  onPress={finish}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  style={({ pressed }) => [
+                    styles.finishButton,
+                    { backgroundColor: success },
+                    pressed && styles.pressed,
+                  ]}>
+                  <Text style={[styles.finishLabel, { color: background }]}>Finish</Text>
                 </Pressable>
               )
             : undefined,
         }}
       />
 
-      <Text style={[styles.meta, { color: muted }]}>
-        {active ? (
-          <>
-            Started {formatTime(session.startedAt)} · <Elapsed since={session.startedAt} />
-          </>
-        ) : (
-          `${formatDay(session.startedAt)} · ${formatTime(session.startedAt)} · ${formatDuration(
-            session.endedAt! - session.startedAt
-          )}`
-        )}
-      </Text>
+      <Card style={styles.summary}>
+        <View style={styles.summaryItem}>
+          <Text style={[styles.summaryLabel, { color: muted }]}>
+            {active ? 'DURATION' : formatDay(session.startedAt).toUpperCase()}
+          </Text>
+          <Text style={[styles.summaryValue, active && { color: tint }]}>
+            {active ? (
+              <Elapsed since={session.startedAt} />
+            ) : (
+              formatDuration(session.endedAt! - session.startedAt)
+            )}
+          </Text>
+          <Text style={[styles.summaryDetail, { color: muted }]}>
+            {active ? 'Started' : 'At'} {formatTime(session.startedAt)}
+          </Text>
+        </View>
+        <View style={styles.summaryItem}>
+          <Text style={[styles.summaryLabel, { color: muted }]}>SETS DONE</Text>
+          <Text style={styles.summaryValue}>
+            {doneSets}
+            {active && <Text style={[styles.summaryOf, { color: muted }]}> / {totalSets}</Text>}
+          </Text>
+          <Text style={[styles.summaryDetail, { color: muted }]}>
+            {session.exercises.length} {session.exercises.length === 1 ? 'exercise' : 'exercises'}
+          </Text>
+        </View>
+      </Card>
 
       {session.exercises.length === 0 && (
         <Text style={[styles.empty, { color: muted }]}>
@@ -195,17 +227,13 @@ export default function SessionScreen() {
         )
       )}
 
-      {active && (
-        <Pressable
-          onPress={addExercises}
-          style={({ pressed }) => [styles.addButton, { borderColor: tint }, pressed && styles.pressed]}>
-          <Text style={[styles.addLabel, { color: tint }]}>+ Add exercises</Text>
-        </Pressable>
-      )}
+      {active && <Button label="+ Add exercises" variant="soft" onPress={addExercises} />}
 
-      <Pressable onPress={discard} style={styles.discard} hitSlop={8}>
-        <Text style={{ color: danger }}>{active ? 'Discard workout' : 'Delete from history'}</Text>
-      </Pressable>
+      <Button
+        label={active ? 'Discard workout' : 'Delete from history'}
+        variant="danger"
+        onPress={discard}
+      />
     </ScrollView>
   );
 }
@@ -220,7 +248,6 @@ function ActiveExercise({
   onChanged: () => Promise<void>;
 }) {
   const db = useSQLiteContext();
-  const border = useThemeColor({}, 'border');
   const muted = useThemeColor({}, 'muted');
   const tint = useThemeColor({}, 'tint');
 
@@ -239,7 +266,7 @@ function ActiveExercise({
   };
 
   return (
-    <View style={[styles.card, { borderColor: border }]}>
+    <Card style={styles.card}>
       <View style={styles.cardHeader}>
         <Link href={{ pathname: '/exercise/[id]', params: { id: exercise.exerciseId } }} asChild>
           <Pressable style={styles.cardTitle}>
@@ -255,7 +282,7 @@ function ActiveExercise({
         />
       </View>
 
-      <View style={styles.setRow}>
+      <View style={[styles.setRow, styles.setRowBody]}>
         <Text style={[styles.colSet, styles.colHeader, { color: muted }]}>SET</Text>
         <Text style={[styles.colLast, styles.colHeader, { color: muted }]}>LAST TIME</Text>
         <Text style={[styles.colWeight, styles.colHeader, { color: muted }]}>
@@ -275,19 +302,20 @@ function ActiveExercise({
           isTimed={exercise.isTimed}
           previous={exercise.previous[index]}
           unit={unit}
-          onDeleted={onChanged}
+          onChanged={onChanged}
         />
       ))}
 
-      <Pressable
+      <Button
+        label="+ Add set"
+        variant="secondary"
+        style={styles.addSet}
         onPress={async () => {
           await addSet(db, exercise.id, unit);
           await onChanged();
         }}
-        style={({ pressed }) => [styles.addSet, pressed && styles.pressed]}>
-        <Text style={{ color: tint }}>+ Add set</Text>
-      </Pressable>
-    </View>
+      />
+    </Card>
   );
 }
 
@@ -307,14 +335,14 @@ function SetRow({
   isTimed,
   previous,
   unit,
-  onDeleted,
+  onChanged,
 }: {
   set: LoggedSet;
   index: number;
   isTimed: boolean;
   previous: SetValues | undefined;
   unit: WeightUnit;
-  onDeleted: () => Promise<void>;
+  onChanged: () => Promise<void>;
 }) {
   const db = useSQLiteContext();
   const [weight, setWeight] = useState(() =>
@@ -325,11 +353,12 @@ function SetRow({
   const [missingEffort, setMissingEffort] = useState(false);
   const muted = useThemeColor({}, 'muted');
   const success = useThemeColor({}, 'success');
+  const successSoft = useThemeColor({}, 'successSoft');
   const danger = useThemeColor({}, 'danger');
-  const card = useThemeColor({}, 'card');
-  const border = useThemeColor({}, 'border');
+  const surface = useThemeColor({}, 'cardRaised');
+  const background = useThemeColor({}, 'background');
 
-  const save = (nextWeight: string, nextEffort: string) => {
+  const save =(nextWeight: string, nextEffort: string) => {
     const effortValue = parseNumber(nextEffort);
     const whole = effortValue == null ? null : Math.round(effortValue);
     updateSet(db, set.id, {
@@ -348,6 +377,7 @@ function SetRow({
     const next = !completed;
     setCompleted(next);
     await setSetCompleted(db, set.id, next);
+    await onChanged(); // refreshes the "sets done" count
   };
 
   const confirmDelete = () => {
@@ -358,16 +388,18 @@ function SetRow({
         style: 'destructive',
         onPress: async () => {
           await deleteSet(db, set.id);
-          await onDeleted();
+          await onChanged();
         },
       },
     ]);
   };
 
   return (
-    <View style={[styles.setRow, completed && { backgroundColor: card }]}>
+    <View style={[styles.setRow, styles.setRowBody, completed && { backgroundColor: successSoft }]}>
       <Pressable onLongPress={confirmDelete} style={styles.colSet} accessibilityHint="Long press to delete">
-        <Text style={styles.setNumber}>{index + 1}</Text>
+        <View style={[styles.setPill, { backgroundColor: completed ? 'transparent' : surface }]}>
+          <Text style={styles.setNumber}>{index + 1}</Text>
+        </View>
       </Pressable>
       <Text style={[styles.colLast, styles.last, { color: muted }]} numberOfLines={1}>
         {previous ? formatSet(previous, unit) : '—'}
@@ -390,7 +422,7 @@ function SetRow({
         style={[
           styles.colEffort,
           styles.input,
-          { borderColor: missingEffort ? danger : border },
+          { borderColor: missingEffort ? danger : 'transparent' },
         ]}
         value={effort}
         onChangeText={(text) => {
@@ -406,16 +438,25 @@ function SetRow({
         accessibilityLabel={`Set ${index + 1} ${isTimed ? 'seconds' : 'reps'}`}
       />
       <View style={styles.colCheck}>
-        <IconButton
-          ios={completed ? 'checkmark.circle.fill' : 'circle'}
-          material={completed ? 'check_circle' : 'radio_button_unchecked'}
-          label={completed ? `Set ${index + 1} done` : `Mark set ${index + 1} done`}
-          color={completed ? 'success' : 'muted'}
-          size={28}
+        <Pressable
           onPress={toggle}
-        />
+          hitSlop={6}
+          accessibilityRole="checkbox"
+          accessibilityState={{ checked: completed }}
+          accessibilityLabel={`Set ${index + 1} done`}
+          style={({ pressed }) => [
+            styles.check,
+            { backgroundColor: completed ? success : surface },
+            pressed && styles.pressed,
+          ]}>
+          <SymbolView
+            name={{ ios: 'checkmark', android: 'check', web: 'check' }}
+            size={18}
+            weight="bold"
+            tintColor={completed ? background : muted}
+          />
+        </Pressable>
       </View>
-      {completed && <View style={[styles.doneBar, { backgroundColor: success }]} />}
     </View>
   );
 }
@@ -427,24 +468,26 @@ function FinishedExercise({
   exercise: SessionExerciseDetail;
   unit: WeightUnit;
 }) {
-  const border = useThemeColor({}, 'border');
   const muted = useThemeColor({}, 'muted');
   const tint = useThemeColor({}, 'tint');
+  const surface = useThemeColor({}, 'cardRaised');
 
   return (
-    <View style={[styles.card, { borderColor: border }]}>
+    <Card style={styles.card}>
       <Link href={{ pathname: '/exercise/[id]', params: { id: exercise.exerciseId } }} asChild>
         <Pressable>
           <Text style={[styles.exerciseName, { color: tint }]}>{exercise.name}</Text>
         </Pressable>
       </Link>
       {exercise.sets.map((set, index) => (
-        <View key={set.id} style={styles.summaryRow}>
-          <Text style={[styles.summarySet, { color: muted }]}>{index + 1}</Text>
-          <Text style={styles.summaryValue}>{formatSet(set, unit)}</Text>
+        <View key={set.id} style={styles.loggedRow}>
+          <View style={[styles.setPill, { backgroundColor: surface }]}>
+            <Text style={[styles.setNumber, { color: muted }]}>{index + 1}</Text>
+          </View>
+          <Text style={styles.loggedValue}>{formatSet(set, unit)}</Text>
         </View>
       ))}
-    </View>
+    </Card>
   );
 }
 
@@ -458,53 +501,82 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
-    gap: 16,
+    gap: 14,
     paddingBottom: 48,
   },
-  headerButton: {
-    fontSize: 17,
-    fontWeight: '600',
+  finishButton: {
+    borderRadius: 999,
+    paddingHorizontal: 16,
+    paddingVertical: 7,
   },
-  meta: {
-    fontSize: 14,
+  finishLabel: {
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  summary: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  summaryItem: {
+    flex: 1,
+    gap: 2,
+  },
+  summaryLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1,
+  },
+  summaryValue: {
+    fontSize: 28,
+    fontWeight: '800',
+    fontVariant: ['tabular-nums'],
+  },
+  summaryOf: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  summaryDetail: {
+    fontSize: 13,
   },
   empty: {
     textAlign: 'center',
     marginVertical: 24,
   },
   card: {
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
+    paddingHorizontal: 10,
     gap: 6,
   },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    paddingHorizontal: 6,
     marginBottom: 4,
   },
   cardTitle: {
     flex: 1,
   },
   exerciseName: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 17,
+    fontWeight: '800',
   },
   setRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    borderRadius: 8,
-    paddingVertical: 2,
-    backgroundColor: 'transparent',
+  },
+  setRowBody: {
+    borderRadius: 10,
+    paddingVertical: 4,
+    paddingHorizontal: 6,
   },
   colHeader: {
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   colSet: {
-    width: 28,
+    width: 32,
     alignItems: 'center',
     textAlign: 'center',
   },
@@ -512,66 +584,57 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   colWeight: {
-    width: 68,
+    width: 72,
     textAlign: 'center',
   },
   colEffort: {
-    width: 56,
+    width: 60,
     textAlign: 'center',
   },
   colCheck: {
-    width: 32,
+    width: 36,
     alignItems: 'center',
-    backgroundColor: 'transparent',
+  },
+  setPill: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   setNumber: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '800',
   },
   last: {
     fontSize: 13,
   },
   input: {
-    paddingVertical: 6,
+    paddingVertical: 7,
     paddingHorizontal: 4,
+    borderRadius: 8,
+    fontWeight: '700',
   },
-  doneBar: {
-    position: 'absolute',
-    left: 0,
-    top: 6,
-    bottom: 6,
-    width: 3,
-    borderRadius: 2,
+  check: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   addSet: {
-    alignSelf: 'flex-start',
-    paddingVertical: 6,
+    marginTop: 4,
+    paddingVertical: 10,
   },
-  addButton: {
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  addLabel: {
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  discard: {
-    alignSelf: 'center',
-    marginTop: 8,
-  },
-  summaryRow: {
+  loggedRow: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: 12,
+    paddingHorizontal: 6,
   },
-  summarySet: {
-    width: 20,
-    textAlign: 'right',
-  },
-  summaryValue: {
+  loggedValue: {
     fontSize: 15,
+    fontWeight: '600',
   },
   pressed: {
     opacity: 0.6,

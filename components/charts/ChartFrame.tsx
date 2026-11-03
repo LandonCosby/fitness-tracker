@@ -23,6 +23,7 @@ export function ChartWithData({ rows, children }: { rows: ChartRow[]; children: 
   const tint = useThemeColor({}, 'tint');
   const muted = useThemeColor({}, 'muted');
   const border = useThemeColor({}, 'border');
+  const surface = useThemeColor({}, 'cardRaised');
 
   return (
     <View style={styles.wrapper}>
@@ -40,7 +41,7 @@ export function ChartWithData({ rows, children }: { rows: ChartRow[]; children: 
         </Pressable>
       )}
       {open && (
-        <View style={[styles.table, { borderColor: border }]}>
+        <View style={[styles.table, { backgroundColor: surface }]}>
           {[...rows].reverse().map((row, index) => (
             <View
               key={`${row.label}-${index}`}
@@ -79,8 +80,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   table: {
-    borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: 12,
     paddingHorizontal: 12,
   },
   row: {

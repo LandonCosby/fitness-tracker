@@ -1,134 +1,193 @@
+import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Platform, ScrollView, StyleSheet } from 'react-native';
 
+import IconButton from '@/components/IconButton';
 import ModalScreen from '@/components/ModalScreen';
+import SegmentedControl from '@/components/SegmentedControl';
 import { Text, TextInput, View, useThemeColor } from '@/components/Themed';
-import { caloriesFromMacros } from '@/db/nutrition';
-import { getNutritionTargets, setNutritionTarget, type NutritionTargets } from '@/db/settings';
-import { WEIGHT_UNITS, type WeightUnit } from '@/db/units';
+import { Card, TextAction } from '@/components/ui';
+import {
+  MAX_WEEKLY_WORKOUT_GOAL,
+  cmToFeetInches,
+  feetInchesToCm,
+  getProfile,
+  setHeightCm,
+  setSex,
+  setWeeklyWorkoutGoal,
+  type Profile,
+  type Sex,
+} from '@/db/profile';
 import { useWeightUnit } from '@/hooks/useWeightUnit';
-import { formatNumber } from '@/lib/format';
 
-const UNIT_LABELS: Record<WeightUnit, string> = {
-  lb: 'Pounds (lb)',
-  kg: 'Kilograms (kg)',
-};
-
-const TARGET_FIELDS: { name: keyof NutritionTargets; label: string; unit: string }[] = [
-  { name: 'calories', label: 'Calories', unit: 'kcal' },
-  { name: 'proteinG', label: 'Protein', unit: 'g' },
-  { name: 'carbsG', label: 'Carbs', unit: 'g' },
-  { name: 'fatG', label: 'Fat', unit: 'g' },
+const SEX_OPTIONS: { value: Sex; label: string }[] = [
+  { value: 'male', label: 'Male' },
+  { value: 'female', label: 'Female' },
 ];
 
-type TargetText = Record<keyof NutritionTargets, string>;
-
+// Profile (for strength ranks) and the weekly workout goal (Home streak).
+// Nutrition targets and the lb/kg unit live on the Nutrition tab (app/nutrition-goals.tsx).
 export default function SettingsScreen() {
   const db = useSQLiteContext();
-  const { unit, setUnit } = useWeightUnit();
-  const [targets, setTargets] = useState<TargetText | null>(null);
-  const tint = useThemeColor({}, 'tint');
-  const background = useThemeColor({}, 'background');
+  const { unit } = useWeightUnit();
+  const imperial = unit === 'lb';
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [feet, setFeet] = useState('');
+  const [inches, setInches] = useState('');
+  const [cm, setCm] = useState('');
   const muted = useThemeColor({}, 'muted');
 
   useEffect(() => {
     let cancelled = false;
-    getNutritionTargets(db).then((saved) => {
+    getProfile(db).then((saved) => {
       if (cancelled) return;
-      const text = (value: number | null) => (value == null ? '' : formatNumber(value));
-      setTargets({
-        calories: text(saved.calories),
-        proteinG: text(saved.proteinG),
-        carbsG: text(saved.carbsG),
-        fatG: text(saved.fatG),
-      });
+      setProfile(saved);
+      if (saved.heightCm) {
+        const { feet: f, inches: i } = cmToFeetInches(saved.heightCm);
+        setFeet(String(f));
+        setInches(String(i));
+        setCm(String(Math.round(saved.heightCm)));
+      }
     });
     return () => {
       cancelled = true;
     };
   }, [db]);
 
-  // Saved as you type; an empty field clears that target.
-  const changeTarget = (name: keyof NutritionTargets, text: string) => {
-    const clean = text.replace(/[^0-9.,]/g, '');
-    setTargets((current) => (current ? { ...current, [name]: clean } : current));
-    const value = parseFloat(clean.replace(',', '.'));
-    setNutritionTarget(db, name, Number.isFinite(value) ? value : null);
+  if (!profile) return <ModalScreen title="Settings">{null}</ModalScreen>;
+
+  const saveImperial = (nextFeet: string, nextInches: string) => {
+    const f = parseInt(nextFeet, 10);
+    const i = parseInt(nextInches || '0', 10);
+    const valid = Number.isFinite(f) && f >= 3 && f <= 8 && Number.isFinite(i) && i >= 0 && i < 12;
+    setHeightCm(db, valid ? feetInchesToCm(f, i) : null);
   };
 
-  const macroCalories = targets
-    ? caloriesFromMacros(
-        parseFloat(targets.proteinG) || 0,
-        parseFloat(targets.carbsG) || 0,
-        parseFloat(targets.fatG) || 0
-      )
-    : 0;
+  const saveMetric = (next: string) => {
+    const value = parseFloat(next.replace(',', '.'));
+    setHeightCm(db, Number.isFinite(value) && value >= 100 && value <= 250 ? value : null);
+  };
+
+  const changeGoal = (goal: number) => {
+    setProfile({ ...profile, weeklyWorkoutGoal: goal });
+    setWeeklyWorkoutGoal(db, goal);
+  };
 
   return (
     <ModalScreen title="Settings">
       <ScrollView
-        style={styles.container}
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
         automaticallyAdjustKeyboardInsets>
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Weight unit</Text>
-          <View style={[styles.segmented, { borderColor: tint }]} accessibilityRole="radiogroup">
-            {WEIGHT_UNITS.map((option) => {
-              const selected = option === unit;
-              return (
-                <Pressable
-                  key={option}
-                  onPress={() => setUnit(option)}
-                  accessibilityRole="radio"
-                  accessibilityState={{ checked: selected }}
-                  style={({ pressed }) => [
-                    styles.segment,
-                    selected && { backgroundColor: tint },
-                    pressed && !selected && styles.pressed,
-                  ]}>
-                  <Text style={[styles.segmentLabel, selected && { color: background }]}>
-                    {UNIT_LABELS[option]}
-                  </Text>
-                </Pressable>
-              );
-            })}
+        <Card style={styles.section}>
+          <Text style={styles.sectionTitle}>Profile</Text>
+          <Text style={[styles.hint, { color: muted }]}>
+            Used to rank your strength on the Progress tab. Body weight comes from your latest
+            weigh-in.
+          </Text>
+
+          <Text style={[styles.label, { color: muted }]}>Sex</Text>
+          <SegmentedControl
+            options={SEX_OPTIONS}
+            value={profile.sex}
+            onChange={(sex) => {
+              setProfile({ ...profile, sex });
+              setSex(db, sex);
+            }}
+          />
+
+          <Text style={[styles.label, { color: muted }]}>Height</Text>
+          {imperial ? (
+            <View style={styles.heightRow}>
+              <TextInput
+                style={styles.heightInput}
+                value={feet}
+                onChangeText={(text) => {
+                  const clean = text.replace(/[^0-9]/g, '');
+                  setFeet(clean);
+                  saveImperial(clean, inches);
+                }}
+                keyboardType="number-pad"
+                maxLength={1}
+                placeholder="5"
+                accessibilityLabel="Height, feet"
+              />
+              <Text style={[styles.heightUnit, { color: muted }]}>ft</Text>
+              <TextInput
+                style={styles.heightInput}
+                value={inches}
+                onChangeText={(text) => {
+                  const clean = text.replace(/[^0-9]/g, '');
+                  setInches(clean);
+                  saveImperial(feet, clean);
+                }}
+                keyboardType="number-pad"
+                maxLength={2}
+                placeholder="10"
+                accessibilityLabel="Height, inches"
+              />
+              <Text style={[styles.heightUnit, { color: muted }]}>in</Text>
+            </View>
+          ) : (
+            <View style={styles.heightRow}>
+              <TextInput
+                style={styles.heightInput}
+                value={cm}
+                onChangeText={(text) => {
+                  const clean = text.replace(/[^0-9.,]/g, '');
+                  setCm(clean);
+                  saveMetric(clean);
+                }}
+                keyboardType="decimal-pad"
+                maxLength={5}
+                placeholder="178"
+                accessibilityLabel="Height in centimeters"
+              />
+              <Text style={[styles.heightUnit, { color: muted }]}>cm</Text>
+            </View>
+          )}
+        </Card>
+
+        <Card style={styles.section}>
+          <Text style={styles.sectionTitle}>Weekly workout goal</Text>
+          <View style={styles.goalRow}>
+            <IconButton
+              ios="minus.circle.fill"
+              material="remove_circle"
+              label="Fewer workouts per week"
+              color="tint"
+              size={32}
+              onPress={() => changeGoal(profile.weeklyWorkoutGoal - 1)}
+              disabled={profile.weeklyWorkoutGoal <= 1}
+            />
+            <Text style={styles.goalValue} accessibilityLiveRegion="polite">
+              {profile.weeklyWorkoutGoal}
+              <Text style={[styles.goalUnit, { color: muted }]}> per week</Text>
+            </Text>
+            <IconButton
+              ios="plus.circle.fill"
+              material="add_circle"
+              label="More workouts per week"
+              color="tint"
+              size={32}
+              onPress={() => changeGoal(profile.weeklyWorkoutGoal + 1)}
+              disabled={profile.weeklyWorkoutGoal >= MAX_WEEKLY_WORKOUT_GOAL}
+            />
           </View>
           <Text style={[styles.hint, { color: muted }]}>
-            Weights are shown in this unit. Sets you&apos;ve already logged keep the unit they were
-            entered in, so switching never changes your history.
+            Home shows how many weeks in a row you&apos;ve hit this (weeks run Monday to Sunday).
           </Text>
-        </View>
+        </Card>
 
-        {targets && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Daily nutrition targets</Text>
-            <View style={styles.grid}>
-              {TARGET_FIELDS.map((field) => (
-                <View key={field.name} style={styles.targetField}>
-                  <Text style={[styles.targetLabel, { color: muted }]}>
-                    {field.label} ({field.unit})
-                  </Text>
-                  <TextInput
-                    value={targets[field.name]}
-                    onChangeText={(text) => changeTarget(field.name, text)}
-                    placeholder="No target"
-                    keyboardType="decimal-pad"
-                    maxLength={6}
-                    accessibilityLabel={`${field.label} target in ${field.unit}`}
-                  />
-                </View>
-              ))}
-            </View>
-            <Text style={[styles.hint, { color: muted }]}>
-              Leave a field empty for no target.
-              {macroCalories > 0 &&
-                ` Your protein, carbs and fat targets add up to ${macroCalories.toLocaleString()} kcal.`}
-            </Text>
-          </View>
-        )}
+        <Card style={styles.section}>
+          <Text style={styles.sectionTitle}>Nutrition goals & units</Text>
+          <Text style={[styles.hint, { color: muted }]}>
+            Calorie and macro targets and the lb/kg switch are on the Nutrition tab.
+          </Text>
+          <TextAction label="Open goals & units ›" onPress={() => router.replace('/nutrition-goals')} />
+        </Card>
 
         {/* Use a light status bar on iOS to account for the black space above the modal */}
         <StatusBar style={Platform.OS === 'ios' ? 'light' : 'auto'} />
@@ -138,52 +197,56 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   content: {
-    padding: 24,
-    gap: 32,
+    padding: 16,
+    gap: 16,
+    paddingBottom: 40,
   },
   section: {
-    gap: 12,
+    gap: 10,
   },
   sectionTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+  },
+  label: {
+    fontSize: 13,
+    fontWeight: '700',
+    marginTop: 4,
+  },
+  heightRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  heightInput: {
+    width: 72,
+    textAlign: 'center',
+    fontWeight: '700',
+  },
+  heightUnit: {
+    fontSize: 15,
+    fontWeight: '600',
+    marginRight: 8,
+  },
+  goalRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 20,
+  },
+  goalValue: {
+    fontSize: 32,
+    fontWeight: '800',
+    minWidth: 130,
+    textAlign: 'center',
+  },
+  goalUnit: {
     fontSize: 15,
     fontWeight: '600',
   },
-  segmented: {
-    flexDirection: 'row',
-    borderWidth: 1,
-    borderRadius: 10,
-    overflow: 'hidden',
-  },
-  segment: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 12,
-  },
-  pressed: {
-    opacity: 0.6,
-  },
-  segmentLabel: {
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  targetField: {
-    width: '47%',
-    flexGrow: 1,
-    gap: 4,
-  },
-  targetLabel: {
-    fontSize: 13,
-  },
   hint: {
     fontSize: 13,
+    lineHeight: 18,
   },
 });

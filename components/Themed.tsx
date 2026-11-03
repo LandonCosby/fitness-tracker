@@ -45,18 +45,21 @@ export function Text(props: TextProps) {
   return <DefaultText style={[{ color }, style]} {...otherProps} />;
 }
 
+// Transparent unless lightColor/darkColor are given: the navigation theme paints the
+// screen background, and views nested inside filled cards must not cover the card.
 export function View(props: ViewProps) {
   const { style, lightColor, darkColor, ...otherProps } = props;
-  const backgroundColor = useThemeColor({ light: lightColor, dark: darkColor }, 'background');
+  const theme = useColorScheme();
+  const backgroundColor = theme === 'dark' ? darkColor : lightColor;
 
-  return <DefaultView style={[{ backgroundColor }, style]} {...otherProps} />;
+  return <DefaultView style={[backgroundColor ? { backgroundColor } : null, style]} {...otherProps} />;
 }
 
 export function TextInput(props: TextInputProps) {
   const { style, ...otherProps } = props;
   const color = useThemeColor({}, 'text');
-  const backgroundColor = useThemeColor({}, 'card');
-  const borderColor = useThemeColor({}, 'border');
+  const backgroundColor = useThemeColor({}, 'cardRaised');
+  const borderColor = useThemeColor({}, 'inputBorder');
   const placeholderTextColor = useThemeColor({}, 'muted');
 
   return (
@@ -68,9 +71,9 @@ export function TextInput(props: TextInputProps) {
           backgroundColor,
           borderColor,
           borderWidth: 1,
-          borderRadius: 10,
-          paddingHorizontal: 12,
-          paddingVertical: 10,
+          borderRadius: 12,
+          paddingHorizontal: 14,
+          paddingVertical: 12,
           fontSize: 16,
         },
         style,

@@ -186,6 +186,17 @@ const migrations: string[] = [
   );
   CREATE UNIQUE INDEX idx_body_weights_date ON body_weights (date) WHERE deleted_at IS NULL;
   `,
+  // 7: food tabs and logging by weight. category: ingredient | fast_food | meal | custom.
+  // brand: restaurant for fast food. serving_grams: weight of one serving, when known, so
+  // a food can be logged in grams/ounces; entries copy it for display.
+  `
+  ALTER TABLE foods ADD COLUMN category TEXT NOT NULL DEFAULT 'custom';
+  ALTER TABLE foods ADD COLUMN brand TEXT;
+  ALTER TABLE foods ADD COLUMN serving_grams REAL;
+  UPDATE foods SET category = 'ingredient' WHERE id LIKE 'builtin-food:%';
+  CREATE INDEX idx_foods_category ON foods (category);
+  ALTER TABLE food_entries ADD COLUMN serving_grams REAL;
+  `,
 ];
 
 export const DATABASE_VERSION = migrations.length;
