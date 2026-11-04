@@ -30,3 +30,18 @@ export function deliverPickedExercises(exerciseIds: string[]) {
   pending = null;
   callback?.(exerciseIds);
 }
+
+// The picker's "+ New exercise" opens the exercise form; when it saves, the new exercise
+// is handed back so the picker can select it.
+let pendingCreated: ((exerciseId: string) => void) | null = null;
+
+export function openNewExerciseForm(onCreated: (exerciseId: string) => void) {
+  pendingCreated = onCreated;
+  router.push('/exercise-form');
+}
+
+export function deliverCreatedExercise(exerciseId: string) {
+  const callback = pendingCreated;
+  pendingCreated = null;
+  callback?.(exerciseId);
+}

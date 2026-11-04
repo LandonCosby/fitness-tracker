@@ -6,8 +6,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ExerciseBrowser from '@/components/ExerciseBrowser';
 import ModalScreen from '@/components/ModalScreen';
 import { Text, View, useThemeColor } from '@/components/Themed';
+import { TextAction } from '@/components/ui';
 import { isMuscleGroup } from '@/db/exerciseTags';
-import { deliverPickedExercises } from '@/lib/exercisePicker';
+import { deliverPickedExercises, openNewExerciseForm } from '@/lib/exercisePicker';
 
 // Opened with openExercisePicker(); returns the chosen exercises in the order tapped.
 export default function ExercisePickerScreen() {
@@ -27,8 +28,22 @@ export default function ExercisePickerScreen() {
     router.back();
   };
 
+  // A custom exercise made here is picked straight away (or added to the selection).
+  const newExercise = () => {
+    openNewExerciseForm((exerciseId) => {
+      if (singleMode) {
+        deliverPickedExercises([exerciseId]);
+        router.back();
+        return;
+      }
+      setSelected((current) => (current.includes(exerciseId) ? current : [...current, exerciseId]));
+    });
+  };
+
   return (
-    <ModalScreen title={singleMode ? 'Choose exercise' : 'Add exercises'}>
+    <ModalScreen
+      title={singleMode ? 'Choose exercise' : 'Add exercises'}
+      right={<TextAction label="+ New" onPress={newExercise} accessibilityLabel="Create a new exercise" />}>
       <ExerciseBrowser
         initialMuscles={initialMuscles}
         selectedIds={selectedIds}

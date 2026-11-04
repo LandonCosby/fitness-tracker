@@ -197,6 +197,22 @@ const migrations: string[] = [
   CREATE INDEX idx_foods_category ON foods (category);
   ALTER TABLE food_entries ADD COLUMN serving_grams REAL;
   `,
+  // 8: custom meals as recipes. A recipe is a custom food (is_recipe = 1) whose per-serving
+  // numbers are worked out from its ingredients; recipe_servings is how many servings the
+  // whole recipe makes. Ingredients point at other foods with an amount in their servings.
+  `
+  ALTER TABLE foods ADD COLUMN is_recipe INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE foods ADD COLUMN recipe_servings REAL;
+
+  CREATE TABLE recipe_items (
+    id TEXT PRIMARY KEY NOT NULL,
+    recipe_id TEXT NOT NULL REFERENCES foods (id),
+    food_id TEXT NOT NULL REFERENCES foods (id),
+    position INTEGER NOT NULL,
+    servings REAL NOT NULL,${RECORD_COLUMNS}
+  );
+  CREATE INDEX idx_recipe_items_recipe ON recipe_items (recipe_id, position);
+  `,
 ];
 
 export const DATABASE_VERSION = migrations.length;

@@ -121,14 +121,6 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="exercises"
-        options={{
-          title: 'Exercises',
-          tabBarIcon: tabIcon('list.bullet', 'list'),
-          headerRight: () => <AddAndSettingsButtons href="/exercise-form" label="Add exercise" />,
-        }}
-      />
-      <Tabs.Screen
         name="nutrition"
         options={{
           title: 'Nutrition',

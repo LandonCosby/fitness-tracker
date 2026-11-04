@@ -108,7 +108,7 @@ export default function StrengthRank() {
       )}
 
       <Text style={[styles.footnote, { color: muted }]}>
-        Ranks compare your best estimated 1-rep max on barbell benchmark lifts with typical strength
+        Ranks compare your best estimated 1-rep max on benchmark lifts with typical strength
         standards for your sex, adjusted for body weight and height. A guide, not a test.
       </Text>
     </Card>

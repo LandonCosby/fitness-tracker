@@ -104,6 +104,10 @@ export type Food = RecordColumns &
     brand: string | null;
     /** Weight of one serving, when known (allows logging by weight). */
     serving_grams: number | null;
+    /** 1 for a custom meal built from ingredients (see recipe_items). */
+    is_recipe: 0 | 1;
+    /** How many servings the whole recipe makes. */
+    recipe_servings: number | null;
     last_used_at: number | null;
   };
 

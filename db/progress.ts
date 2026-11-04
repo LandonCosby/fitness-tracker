@@ -6,8 +6,12 @@ import { convertWeight, isWeightUnit, type WeightUnit } from './units';
 // Estimated 1-rep max uses the Epley formula, only trusted up to this many reps.
 export const ONE_REP_MAX_MAX_REPS = 12;
 
-export function estimateOneRepMax(weight: number, reps: number): number | null {
-  if (weight <= 0 || reps < 1 || reps > ONE_REP_MAX_MAX_REPS) return null;
+export function estimateOneRepMax(
+  weight: number,
+  reps: number,
+  maxReps: number = ONE_REP_MAX_MAX_REPS
+): number | null {
+  if (weight <= 0 || reps < 1 || reps > maxReps) return null;
   return reps === 1 ? weight : weight * (1 + reps / 30);
 }
 
@@ -101,14 +105,19 @@ async function completedSets(
 }
 
 // Best of each record type. Ties keep the earliest, so a record dates from when it was set.
-export function computeRecords(sets: CompletedSet[]): ExerciseRecords {
+// maxReps: highest rep count trusted for the estimated 1RM (strength ranks allow more for
+// isolation lifts, which are usually trained for 15+ reps).
+export function computeRecords(
+  sets: CompletedSet[],
+  maxReps: number = ONE_REP_MAX_MAX_REPS
+): ExerciseRecords {
   const records: ExerciseRecords = { ...EMPTY_RECORDS };
   for (const set of sets) {
     if (set.weight != null && (!records.heaviest || set.weight > records.heaviest.weight)) {
       records.heaviest = { weight: set.weight, reps: set.reps, at: set.startedAt };
     }
     if (set.weight != null && set.reps != null) {
-      const value = estimateOneRepMax(set.weight, set.reps);
+      const value = estimateOneRepMax(set.weight, set.reps, maxReps);
       if (value != null && (!records.bestOneRepMax || value > records.bestOneRepMax.value)) {
         records.bestOneRepMax = { value, weight: set.weight, reps: set.reps, at: set.startedAt };
       }
@@ -130,9 +139,10 @@ export function computeRecords(sets: CompletedSet[]): ExerciseRecords {
 export async function getExerciseRecords(
   db: SQLiteDatabase,
   exerciseId: string,
-  unit: WeightUnit
+  unit: WeightUnit,
+  maxReps: number = ONE_REP_MAX_MAX_REPS
 ): Promise<ExerciseRecords> {
-  return computeRecords(await completedSets(db, unit, { exerciseId }));
+  return computeRecords(await completedSets(db, unit, { exerciseId }), maxReps);
 }
 
 export type RecordsListItem = {

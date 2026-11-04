@@ -97,6 +97,8 @@ function RootLayoutNav() {
             <Stack.Screen name="nutrition-goals" options={MODAL} />
             <Stack.Screen name="food-add" options={MODAL} />
             <Stack.Screen name="food-entry" options={MODAL} />
+            <Stack.Screen name="recipe-form" options={MODAL} />
+            <Stack.Screen name="ingredient-picker" options={MODAL} />
             <Stack.Screen name="weigh-in" options={MODAL} />
           </Stack>
         </ThemeProvider>

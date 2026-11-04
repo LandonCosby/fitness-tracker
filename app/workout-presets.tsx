@@ -5,9 +5,10 @@ import { Pressable, ScrollView, StyleSheet } from 'react-native';
 
 import ModalScreen from '@/components/ModalScreen';
 import { Text, View, useThemeColor } from '@/components/Themed';
-import { Card } from '@/components/ui';
+import { Button, Card } from '@/components/ui';
 import { MUSCLE_LABELS } from '@/db/exerciseTags';
-import { PRESET_GROUPS, getPresetExercises, type WorkoutPreset } from '@/db/workoutPresets';
+import SegmentedControl from '@/components/SegmentedControl';
+import { PRESET_GROUPS, alternateOf, getPresetExercises, type WorkoutPreset } from '@/db/workoutPresets';
 import type { WorkoutTemplateExercise } from '@/db/workouts';
 import { deliverPickedPreset } from '@/lib/presetPicker';
 import { formatSeconds } from '@/lib/format';
@@ -21,7 +22,10 @@ export default function WorkoutPresetsScreen() {
 
   useEffect(() => {
     let cancelled = false;
-    const presets = PRESET_GROUPS.flatMap((g) => g.presets);
+    // Both versions of every preset (main and alternate).
+    const presets = PRESET_GROUPS.flatMap((g) => g.presets).flatMap((p) =>
+      p.alternate ? [p, alternateOf(p)] : [p]
+    );
     Promise.all(presets.map((p) => getPresetExercises(db, p))).then((lists) => {
       if (!cancelled) setExercises(Object.fromEntries(presets.map((p, i) => [p.key, lists[i]])));
     });
@@ -39,6 +43,7 @@ export default function WorkoutPresetsScreen() {
     <ModalScreen title="Prebuilt workouts">
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={[styles.intro, { color: muted }]}>
+          Every workout has an alternate version with different exercises for the same muscles.
           Pick one to fill in your new workout. You can change the name, exercises, sets and reps
           before saving, and edit it any time after.
         </Text>
@@ -50,8 +55,8 @@ export default function WorkoutPresetsScreen() {
                 <PresetCard
                   key={preset.key}
                   preset={preset}
-                  exercises={exercises[preset.key] ?? []}
-                  onPress={() => choose(preset)}
+                  exercisesFor={(key) => exercises[key] ?? []}
+                  onChoose={choose}
                 />
               ))}
             </View>
@@ -62,33 +67,49 @@ export default function WorkoutPresetsScreen() {
 }
 
 function PresetCard({
-  preset,
-  exercises,
-  onPress,
+  preset: main,
+  exercisesFor,
+  onChoose,
 }: {
   preset: WorkoutPreset;
-  exercises: WorkoutTemplateExercise[];
-  onPress: () => void;
+  exercisesFor: (key: string) => WorkoutTemplateExercise[];
+  onChoose: (preset: WorkoutPreset) => void;
 }) {
   const muted = useThemeColor({}, 'muted');
   const tint = useThemeColor({}, 'tint');
   const surface = useThemeColor({}, 'cardRaised');
+  const [version, setVersion] = useState<'main' | 'alt'>('main');
+  const preset = version === 'alt' && main.alternate ? alternateOf(main) : main;
+  const exercises = exercisesFor(preset.key);
+  const onPress = () => onChoose(preset);
 
   return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={`Use ${preset.name}: ${exercises.length} exercises`}
-      style={({ pressed }) => pressed && styles.pressed}>
-      <Card style={styles.card}>
-        <View style={styles.cardHeader}>
-          <View style={styles.cardHeading}>
-            <Text style={styles.name}>{preset.name}</Text>
-            <Text style={[styles.description, { color: muted }]}>{preset.description}</Text>
-          </View>
-          <Text style={[styles.use, { color: tint }]}>Use ›</Text>
+    <Card style={styles.card}>
+      <View style={styles.cardHeader}>
+        <View style={styles.cardHeading}>
+          <Text style={styles.name}>{preset.name}</Text>
+          <Text style={[styles.description, { color: muted }]}>{preset.description}</Text>
         </View>
-        <View style={styles.tags}>
+        <Pressable
+          onPress={onPress}
+          hitSlop={10}
+          accessibilityRole="button"
+          accessibilityLabel={`Use ${preset.name}: ${exercises.length} exercises`}>
+          {({ pressed }) => <Text style={[styles.use, { color: tint }, pressed && styles.pressed]}>Use ›</Text>}
+        </Pressable>
+      </View>
+      {main.alternate && (
+        <SegmentedControl
+          compact
+          options={[
+            { value: 'main' as const, label: 'Main' },
+            { value: 'alt' as const, label: 'Alternate' },
+          ]}
+          value={version}
+          onChange={setVersion}
+        />
+      )}
+      <View style={styles.tags}>
           {preset.muscleGroups.map((m) => (
             <Text key={m} style={[styles.tag, { backgroundColor: surface, color: muted }]}>
               {MUSCLE_LABELS[m]}
@@ -108,8 +129,8 @@ function PresetCard({
             </View>
           ))}
         </View>
-      </Card>
-    </Pressable>
+      <Button label={`Use ${preset.name}`} variant="soft" onPress={onPress} />
+    </Card>
   );
 }
 

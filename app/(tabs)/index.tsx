@@ -11,6 +11,7 @@ import {
   recoveryAmount,
   recoveryColor,
   recoveryFills,
+  readyIn,
   trainedAgo,
 } from '@/components/body/recovery';
 import PressableLink from '@/components/PressableLink';
@@ -173,42 +174,63 @@ function RecoveryCard({ recovery, now }: { recovery: Record<MuscleGroup, MuscleR
   const muted = useThemeColor({}, 'muted');
   const surface = useThemeColor({}, 'cardRaised');
 
-  const trained = Object.values(recovery)
-    .filter((r): r is MuscleRecovery & { lastTrainedAt: number } => r.lastTrainedAt != null)
+  // Still recovering: trained within that muscle's recovery time (most recent first).
+  const recovering = Object.values(recovery)
+    .filter(
+      (r): r is MuscleRecovery & { lastTrainedAt: number } =>
+        r.lastTrainedAt != null && recoveryAmount(r.lastTrainedAt, now, r.muscle) < 1
+    )
     .sort((a, b) => b.lastTrainedAt - a.lastTrainedAt);
-  const fresh = Object.values(recovery).filter((r) => r.lastTrainedAt == null);
+  const ready = Object.values(recovery).filter(
+    (r) => r.lastTrainedAt == null || recoveryAmount(r.lastTrainedAt, now, r.muscle) >= 1
+  );
 
   const label =
-    trained.length === 0
-      ? 'Body diagram: every muscle is fresh.'
-      : `Body diagram. ${trained.map((r) => `${MUSCLE_LABELS[r.muscle]} trained ${trainedAgo(r.lastTrainedAt, now)}`).join('. ')}.`;
+    recovering.length === 0
+      ? 'Body diagram: every muscle is recovered.'
+      : `Body diagram. ${recovering
+          .map((r) => `${MUSCLE_LABELS[r.muscle]} trained ${trainedAgo(r.lastTrainedAt, now)}, ${readyIn(r.lastTrainedAt, now, r.muscle)}`)
+          .join('. ')}.`;
 
   return (
     <Card style={styles.recovery}>
       <BodyMap fills={recoveryFills(recovery, now)} height={230} accessibilityLabel={label} />
       <RecoveryLegend />
-      {trained.length > 0 ? (
-        <View style={styles.muscleList}>
-          {trained.map((r) => (
-            <View key={r.muscle} style={[styles.muscleChip, { backgroundColor: surface }]}>
-              <View
-                style={[styles.dot, { backgroundColor: recoveryColor(recoveryAmount(r.lastTrainedAt, now)) }]}
-              />
-              <Text style={styles.muscleName}>{MUSCLE_LABELS[r.muscle]}</Text>
-              <Text style={[styles.muscleAgo, { color: muted }]}>{trainedAgo(r.lastTrainedAt, now)}</Text>
-            </View>
-          ))}
+      {recovering.length > 0 ? (
+        <View style={styles.muscleGroup}>
+          <Text style={[styles.groupLabel, { color: muted }]}>RECOVERING</Text>
+          <View style={styles.muscleList}>
+            {recovering.map((r) => (
+              <View key={r.muscle} style={[styles.muscleChip, { backgroundColor: surface }]}>
+                <View
+                  style={[
+                    styles.dot,
+                    { backgroundColor: recoveryColor(recoveryAmount(r.lastTrainedAt, now, r.muscle)) },
+                  ]}
+                />
+                <Text style={styles.muscleName}>{MUSCLE_LABELS[r.muscle]}</Text>
+                <Text style={[styles.muscleAgo, { color: muted }]}>
+                  {readyIn(r.lastTrainedAt, now, r.muscle)}
+                </Text>
+              </View>
+            ))}
+          </View>
         </View>
       ) : (
         <Text style={[styles.hint, { color: muted }]}>
-          No workouts in the last 7 days. Every muscle is fresh and ready to go.
+          Every muscle is recovered and ready to train.
         </Text>
       )}
-      {trained.length > 0 && fresh.length > 0 && (
+      {recovering.length > 0 && ready.length > 0 && (
         <Text style={[styles.hint, { color: muted }]}>
-          Fresh: {fresh.map((r) => MUSCLE_LABELS[r.muscle]).join(', ')}
+          Ready to train: {ready.map((r) => MUSCLE_LABELS[r.muscle]).join(', ')}
         </Text>
       )}
+      <Text style={[styles.footnote, { color: muted }]}>
+        Recovery times follow resistance-training studies: about 72 h for chest, back and legs, 48
+        h for shoulders and arms, 36 h for calves, abs and forearms. Training to failure can take
+        longer.
+      </Text>
     </Card>
   );
 }
@@ -280,6 +302,18 @@ const styles = StyleSheet.create({
   },
   recovery: {
     gap: 14,
+  },
+  muscleGroup: {
+    gap: 8,
+  },
+  groupLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1,
+  },
+  footnote: {
+    fontSize: 11,
+    lineHeight: 15,
   },
   muscleList: {
     flexDirection: 'row',

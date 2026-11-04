@@ -14,7 +14,8 @@ import type { FoodCategory } from './types';
 // Re-running after a version bump inserts new foods and refreshes category, brand and serving
 // weight on existing built-ins, but never brings back one the user removed (deleted_at is
 // left alone). 1: first ingredient list. 2: tabs, weights, fast food and meals.
-const FOOD_SEED_VERSION = 2;
+// 3: more ingredients.
+const FOOD_SEED_VERSION = 3;
 const SEED_VERSION_KEY = 'food_seed_version';
 export const BUILT_IN_FOOD_PREFIX = 'builtin-food:';
 
@@ -133,6 +134,113 @@ const INGREDIENTS: Item[] = [
   ['Orange juice', '1 cup', 248, 112, 1.7, 26, 0.5],
   ['Cola', '12 oz can', 368, 140, 0, 39, 0],
   ['Beer, regular', '12 oz', 356, 153, 1.6, 13, 0],
+];
+
+// Added in seed v3.
+const MORE_INGREDIENTS: Item[] = [
+  // Protein
+  ['Chicken breast, raw', '4 oz (112 g)', 112, 134, 25, 0, 3],
+  ['Ground chicken, cooked', '4 oz (112 g)', 112, 214, 26, 0, 12],
+  ['Ground bison, cooked', '4 oz (112 g)', 112, 200, 28, 0, 9],
+  ['Pork tenderloin, cooked', '4 oz (112 g)', 112, 163, 30, 0, 4],
+  ['Ham, deli sliced', '2 oz (56 g)', 56, 60, 10, 1.5, 1.5],
+  ['Italian sausage, cooked', '1 link (75 g)', 75, 230, 14, 2, 18],
+  ['Hot dog, beef', '1 frank (45 g)', 45, 150, 5, 1.5, 13.5],
+  ['Pepperoni', '1 oz (28 g)', 28, 140, 6, 0, 13],
+  ['Turkey bacon', '2 slices (28 g)', 28, 70, 8, 1, 3.5],
+  ['Cod, cooked', '4 oz (112 g)', 112, 119, 26, 0, 1],
+  ['Sardines, canned in oil', '1 can (92 g)', 92, 191, 23, 0, 10.5],
+  ['Tempeh', '3 oz (85 g)', 85, 162, 17, 8, 9],
+  ['Seitan', '3 oz (85 g)', 85, 104, 21, 4, 0.5],
+
+  // Dairy and alternatives
+  ['Milk, whole', '1 cup', 244, 149, 8, 12, 8],
+  ['Greek yogurt, plain 2%', '170 g container', 170, 140, 19, 7, 4],
+  ['Yogurt, plain whole milk', '1 cup', 245, 149, 8.5, 11.4, 8],
+  ['Feta cheese', '1 oz (28 g)', 28, 75, 4, 1.2, 6],
+  ['Swiss cheese', '1 oz (28 g)', 28, 111, 7.6, 0.4, 8.8],
+  ['American cheese', '1 slice (21 g)', 21, 65, 3.5, 1.5, 5],
+  ['Ricotta, part-skim', '½ cup', 124, 171, 14, 6.4, 9.8],
+  ['Oat milk', '1 cup', 240, 120, 3, 16, 5],
+  ['Soy milk, unsweetened', '1 cup', 243, 80, 7, 4, 4],
+
+  // Grains and starches
+  ['Oatmeal, cooked with water', '1 cup', 234, 166, 6, 28, 3.6],
+  ['Couscous, cooked', '1 cup', 157, 176, 6, 36, 0.3],
+  ['Egg noodles, cooked', '1 cup', 160, 221, 7.3, 40, 3.3],
+  ['Instant ramen noodles', '1 package (85 g)', 85, 380, 8, 52, 14],
+  ['English muffin', '1 muffin', 57, 134, 4.4, 26, 1],
+  ['Hamburger bun', '1 bun', 43, 120, 4, 22, 2],
+  ['Pita bread', '1 pita (6.5")', 60, 165, 5.5, 33, 0.7],
+  ['Granola', '½ cup', 61, 300, 7, 32, 15],
+  ['Saltine crackers', '5 crackers', 15, 63, 1.4, 11, 1.4],
+  ['Tortilla chips', '1 oz (28 g)', 28, 140, 2, 18, 7],
+  ['Pretzels', '1 oz (28 g)', 28, 108, 2.9, 22.5, 0.8],
+  ['Breadcrumbs', '¼ cup', 27, 107, 3.6, 19.5, 1.4],
+  ['Cornmeal', '¼ cup', 30, 110, 2.5, 23, 0.5],
+  ['Mashed potatoes (milk & butter)', '1 cup', 210, 237, 4, 35, 9],
+  ['French fries, oven-baked', '3 oz (85 g)', 85, 150, 2, 24, 5],
+
+  // Fruit
+  ['Pineapple', '1 cup chunks', 165, 82, 0.9, 22, 0.2],
+  ['Mango', '1 cup', 165, 99, 1.4, 25, 0.6],
+  ['Watermelon', '1 cup diced', 152, 46, 0.9, 11.5, 0.2],
+  ['Peach', '1 medium', 150, 59, 1.4, 14, 0.4],
+  ['Pear', '1 medium', 178, 101, 0.6, 27, 0.2],
+  ['Raspberries', '1 cup', 123, 64, 1.5, 14.7, 0.8],
+  ['Cherries', '1 cup', 154, 97, 1.6, 25, 0.3],
+  ['Kiwi', '1 fruit', 69, 42, 0.8, 10, 0.4],
+  ['Raisins', '¼ cup', 41, 123, 1.3, 32.7, 0.2],
+  ['Dates, Medjool', '2 dates', 48, 133, 0.9, 36, 0.1],
+  ['Lemon juice', '1 tbsp', 15, 3, 0.1, 1, 0],
+
+  // Vegetables and legumes
+  ['Cauliflower, cooked', '1 cup', 124, 29, 2.3, 5.1, 0.6],
+  ['Zucchini, cooked', '1 cup', 180, 27, 2, 5, 0.6],
+  ['Asparagus, cooked', '6 spears', 90, 20, 2.2, 3.7, 0.2],
+  ['Brussels sprouts, cooked', '1 cup', 156, 56, 4, 11, 0.8],
+  ['Kale, raw', '1 cup', 21, 7, 0.6, 0.9, 0.3],
+  ['Romaine lettuce', '2 cups', 94, 16, 1.2, 3.1, 0.3],
+  ['Celery', '1 stalk', 40, 6, 0.3, 1.2, 0.1],
+  ['Cabbage, raw', '1 cup shredded', 89, 22, 1.1, 5.2, 0.1],
+  ['Mixed vegetables, frozen, cooked', '1 cup', 182, 118, 5.2, 24, 0.3],
+  ['Kidney beans, cooked', '½ cup', 89, 112, 7.7, 20, 0.4],
+  ['Pinto beans, cooked', '½ cup', 86, 123, 7.7, 22.5, 0.6],
+  ['Refried beans', '½ cup', 121, 109, 6.5, 18, 1.5],
+  ['Diced tomatoes, canned', '½ cup', 121, 20, 1, 4.6, 0.2],
+  ['Marinara sauce', '½ cup', 125, 70, 2, 10, 2.5],
+
+  // Nuts, seeds and fats
+  ['Peanuts, dry roasted', '1 oz (28 g)', 28, 166, 6.7, 6, 14],
+  ['Pistachios', '1 oz (49 nuts)', 28, 159, 5.7, 7.7, 12.8],
+  ['Sunflower seeds', '1 oz (28 g)', 28, 165, 5.5, 6.8, 14],
+  ['Pumpkin seeds', '1 oz (28 g)', 28, 163, 8.5, 4.2, 13.9],
+  ['Flaxseed, ground', '1 tbsp', 7, 37, 1.3, 2, 3],
+  ['Almond butter', '2 tbsp', 32, 196, 6.7, 6, 17.8],
+  ['Coconut oil', '1 tbsp', 14, 121, 0, 0, 13.5],
+  ['Vegetable oil', '1 tbsp', 14, 124, 0, 0, 14],
+
+  // Condiments, sauces and baking
+  ['Maple syrup', '1 tbsp', 20, 52, 0, 13.4, 0],
+  ['Brown sugar', '1 tbsp', 14, 52, 0, 13.4, 0],
+  ['Soy sauce', '1 tbsp', 16, 9, 1.3, 0.8, 0.1],
+  ['BBQ sauce', '2 tbsp', 36, 70, 0.3, 17, 0.2],
+  ['Mustard', '1 tsp', 5, 3, 0.2, 0.3, 0.2],
+  ['Hot sauce', '1 tsp', 5, 0, 0, 0, 0],
+  ['Jam or jelly', '1 tbsp', 20, 56, 0.1, 13.8, 0],
+  ['Italian dressing', '2 tbsp', 29, 71, 0.1, 3.5, 6.4],
+  ['Pesto', '2 tbsp', 32, 160, 2.5, 2, 16],
+  ['Guacamole', '2 tbsp', 30, 50, 0.6, 2.6, 4.4],
+  ['Whipped cream', '2 tbsp', 8, 15, 0.2, 0.9, 1.3],
+  ['Cocoa powder, unsweetened', '1 tbsp', 5.4, 12, 1, 3, 0.7],
+  ['Chocolate chips', '1 tbsp', 15, 70, 1, 9, 4],
+
+  // Drinks (grams ≈ millilitres)
+  ['Apple juice', '1 cup', 248, 114, 0.2, 28, 0.3],
+  ['Sports drink', '20 oz bottle', 591, 140, 0, 34, 0],
+  ['Energy drink', '16 oz can', 473, 220, 0, 54, 0],
+  ['Protein shake, ready-to-drink', '1 bottle (11 oz)', 325, 160, 30, 5, 3],
+  ['Wine, red', '5 oz glass', 147, 125, 0.1, 3.8, 0],
 ];
 
 const MEALS: Item[] = [
@@ -332,6 +440,7 @@ function allRows(): Row[] {
   });
   return [
     ...INGREDIENTS.map(item('ingredient')),
+    ...MORE_INGREDIENTS.map(item('ingredient')),
     ...MEALS.map(item('meal')),
     ...FAST_FOOD.map(([brand, name, serving, calories, protein, carbs, fat]) => ({
       id: BUILT_IN_FOOD_PREFIX + slug(brand, name, serving),

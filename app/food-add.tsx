@@ -157,6 +157,22 @@ export default function FoodAddScreen() {
     }
   };
 
+  // Long press: custom meals can be edited (their ingredients); anything can be removed.
+  const onLongPress = (food: SavedFood) => {
+    if (!food.isRecipe) return confirmDelete(food);
+    Alert.alert(food.name, undefined, [
+      {
+        text: 'Edit meal',
+        onPress: () => {
+          setSelected(null);
+          router.push({ pathname: '/recipe-form', params: { id: food.id } });
+        },
+      },
+      { text: 'Remove', style: 'destructive', onPress: () => confirmDelete(food) },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
+
   const confirmDelete = (food: SavedFood) => {
     Alert.alert(
       `Remove "${food.name}"?`,
@@ -237,11 +253,15 @@ export default function FoodAddScreen() {
             </ScrollView>
           )}
           {category === 'custom' && (
-            <Button
-              label={search.trim() ? `+ Create "${search.trim()}"` : '+ Create food'}
-              variant="soft"
-              onPress={createFood}
-            />
+            <View style={styles.createRow}>
+              <Button label="+ Create ingredient" variant="soft" onPress={createFood} style={styles.createButton} />
+              <Button
+                label="+ Create meal"
+                variant="soft"
+                onPress={() => router.push('/recipe-form')}
+                style={styles.createButton}
+              />
+            </View>
           )}
         </View>
 
@@ -256,7 +276,7 @@ export default function FoodAddScreen() {
             foods ? (
               <Text style={[styles.empty, { color: muted }]}>
                 {category === 'custom' && !search.trim()
-                  ? 'Foods you create are saved here, so you can log them again in one tap.'
+                  ? 'Ingredients and meals you create are saved here, so you can log them again in one tap. Build a meal from ingredients like a recipe.'
                   : 'Nothing matches.'}
               </Text>
             ) : undefined
@@ -273,8 +293,8 @@ export default function FoodAddScreen() {
           renderItem={({ item }) => (
             <Pressable
               onPress={() => select(item)}
-              onLongPress={() => confirmDelete(item)}
-              accessibilityHint="Long press to remove from the list"
+              onLongPress={() => onLongPress(item)}
+              accessibilityHint={item.isRecipe ? 'Long press to edit or remove' : 'Long press to remove from the list'}
               style={({ pressed }) => [
                 styles.row,
                 selected?.id === item.id && { backgroundColor: surface },
@@ -404,7 +424,9 @@ export default function FoodAddScreen() {
 
 // "McDonald's · Medium" or "4 oz (112 g)".
 function describeServing(food: SavedFood): string {
-  return [food.brand, food.servingLabel ?? '1 serving'].filter(Boolean).join(' · ');
+  return [food.isRecipe ? 'Meal' : null, food.brand, food.servingLabel ?? '1 serving']
+    .filter(Boolean)
+    .join(' · ');
 }
 
 function defaultAmount(mode: AmountMode, food: SavedFood): string {
@@ -430,6 +452,14 @@ const styles = StyleSheet.create({
   },
   brandRow: {
     gap: 6,
+  },
+  createRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  createButton: {
+    flex: 1,
+    paddingHorizontal: 8,
   },
   row: {
     flexDirection: 'row',

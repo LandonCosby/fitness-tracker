@@ -16,6 +16,7 @@ import {
   type MuscleGroup,
 } from '@/db/exerciseTags';
 import { createExercise, exerciseNameExists, getExercise, updateExercise } from '@/db/exercises';
+import { deliverCreatedExercise } from '@/lib/exercisePicker';
 
 // Adds a custom exercise, or edits one when opened with ?id=.
 export default function ExerciseFormScreen() {
@@ -96,7 +97,8 @@ export default function ExerciseFormScreen() {
       if (id) {
         await updateExercise(db, id, input);
       } else {
-        await createExercise(db, input);
+        const newId = await createExercise(db, input);
+        deliverCreatedExercise(newId);
       }
       router.back();
     } catch {

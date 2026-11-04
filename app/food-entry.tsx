@@ -148,7 +148,7 @@ export default function FoodEntryScreen() {
     ]);
   };
 
-  const title = isEditing ? 'Edit entry' : 'Create food';
+  const title = isEditing ? 'Edit entry' : 'Create ingredient';
 
   if (!loaded) return <ModalScreen title={title}>{null}</ModalScreen>;
 

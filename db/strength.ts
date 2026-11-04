@@ -14,7 +14,17 @@ import type { WeightUnit } from './units';
 // benchmark. The standards are approximate (typical published bodyweight-ratio tables);
 // they're a motivating guide, not a precise measurement.
 
-type StandardKey = 'bench' | 'squat' | 'deadlift' | 'ohp' | 'row' | 'curl' | 'hipThrust';
+type StandardKey =
+  | 'bench'
+  | 'squat'
+  | 'deadlift'
+  | 'ohp'
+  | 'row'
+  | 'curl'
+  | 'hipThrust'
+  | 'calfRaise'
+  | 'cableCrunch'
+  | 'wristCurl';
 
 // 1RM ÷ body weight at: beginner, novice, intermediate, advanced, elite.
 type Standard = [number, number, number, number, number];
@@ -28,6 +38,10 @@ const STANDARDS: Record<Sex, Record<StandardKey, Standard>> = {
     row: [0.5, 0.75, 1.0, 1.5, 1.75],
     curl: [0.2, 0.4, 0.6, 0.85, 1.15],
     hipThrust: [0.75, 1.25, 1.75, 2.5, 3.25],
+    // Isolation lifts: standing machine calf raise, kneeling cable crunch, barbell wrist curl.
+    calfRaise: [0.75, 1.25, 1.75, 2.5, 3.25],
+    cableCrunch: [0.4, 0.6, 0.85, 1.15, 1.5],
+    wristCurl: [0.25, 0.45, 0.65, 0.9, 1.2],
   },
   female: {
     bench: [0.25, 0.5, 0.75, 1.0, 1.3],
@@ -37,8 +51,16 @@ const STANDARDS: Record<Sex, Record<StandardKey, Standard>> = {
     row: [0.25, 0.4, 0.65, 0.9, 1.2],
     curl: [0.1, 0.2, 0.4, 0.6, 0.85],
     hipThrust: [0.5, 1.0, 1.5, 2.0, 2.6],
+    calfRaise: [0.5, 0.9, 1.4, 2.0, 2.7],
+    cableCrunch: [0.25, 0.4, 0.6, 0.85, 1.1],
+    wristCurl: [0.15, 0.25, 0.4, 0.6, 0.8],
   },
 };
+
+// Isolation lifts are usually trained for higher reps, so their estimated 1RM also counts
+// sets of up to 20 (other lifts: up to 12, as everywhere else in the app).
+const HIGH_REP_STANDARDS = new Set<StandardKey>(['calfRaise', 'cableCrunch', 'wristCurl']);
+const HIGH_REP_MAX = 20;
 
 // Taller lifters at the same body weight carry less muscle per unit of height, so their
 // ratio is scaled up a little (and shorter lifters' down): ratio × (height / reference)^0.5.
@@ -77,6 +99,9 @@ export const RANKED_MUSCLES: MuscleGroup[] = [
   'quads',
   'hamstrings',
   'glutes',
+  'calves',
+  'abs',
+  'forearms',
 ];
 
 export const BENCHMARKS: Partial<Record<MuscleGroup, Benchmark[]>> = {
@@ -101,6 +126,24 @@ export const BENCHMARKS: Partial<Record<MuscleGroup, Benchmark[]>> = {
   quads: SQUATS,
   hamstrings: [DEADLIFT, b('Romanian_Deadlift', 'Romanian deadlift', 'deadlift', 0.75)],
   glutes: [b('Barbell_Hip_Thrust', 'Hip thrust', 'hipThrust'), ...SQUATS, DEADLIFT],
+  calves: [
+    b('Standing_Calf_Raises', 'Standing calf raise', 'calfRaise'),
+    b('Smith_Machine_Calf_Raise', 'Smith machine calf raise', 'calfRaise', 0.9),
+    b('Standing_Barbell_Calf_Raise', 'Barbell calf raise', 'calfRaise', 0.8),
+    b('Calf_Press_On_The_Leg_Press_Machine', 'Leg press calf press', 'calfRaise', 1.2),
+    b('Seated_Calf_Raise', 'Seated calf raise', 'calfRaise', 0.7),
+  ],
+  abs: [
+    b('Cable_Crunch', 'Cable crunch', 'cableCrunch'),
+    b('Rope_Crunch', 'Rope crunch', 'cableCrunch'),
+    b('Standing_Rope_Crunch', 'Standing rope crunch', 'cableCrunch', 0.9),
+    b('Ab_Crunch_Machine', 'Ab crunch machine', 'cableCrunch'),
+  ],
+  forearms: [
+    b('Palms-Up_Barbell_Wrist_Curl_Over_A_Bench', 'Barbell wrist curl', 'wristCurl'),
+    b('Seated_Palm-Up_Barbell_Wrist_Curl', 'Seated barbell wrist curl', 'wristCurl'),
+    b('Palms-Down_Wrist_Curl_Over_A_Bench', 'Reverse wrist curl', 'wristCurl', 0.65),
+  ],
 };
 
 // --- Tiers ---
@@ -220,7 +263,11 @@ export async function getMuscleStrength(
   }
 
   const benchmarks = BENCHMARKS[muscle] ?? [];
-  const records = await Promise.all(benchmarks.map((bm) => getExerciseRecords(db, bm.id, unit)));
+  const records = await Promise.all(
+    benchmarks.map((bm) =>
+      getExerciseRecords(db, bm.id, unit, HIGH_REP_STANDARDS.has(bm.standard) ? HIGH_REP_MAX : undefined)
+    )
+  );
 
   let best: Extract<MuscleStrength, { status: 'ranked' }> | null = null;
   benchmarks.forEach((benchmark, index) => {

@@ -41,6 +41,8 @@ export type SavedFood = FoodValues & {
   category: FoodCategory;
   brand: string | null;
   servingGrams: number | null;
+  /** A custom meal made from ingredients (db/recipes.ts). */
+  isRecipe: boolean;
 };
 
 export type LoggedFood = FoodValues & {
@@ -101,6 +103,7 @@ function toSavedFood(row: Food): SavedFood {
     category: row.category,
     brand: row.brand,
     servingGrams: row.serving_grams,
+    isRecipe: row.is_recipe === 1,
   };
 }
 
