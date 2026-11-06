@@ -3,6 +3,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 
+import EmptyState from '@/components/EmptyState';
 import ModalScreen from '@/components/ModalScreen';
 import { Text, View, useThemeColor } from '@/components/Themed';
 import { Button, Card } from '@/components/ui';
@@ -19,7 +20,6 @@ export default function StartWorkoutScreen() {
   const { unit } = useWeightUnit();
   const [workouts, setWorkouts] = useState<WorkoutListItem[] | null>(null);
   const [starting, setStarting] = useState(false);
-  const muted = useThemeColor({}, 'muted');
 
   useFocusEffect(
     useCallback(() => {
@@ -56,17 +56,14 @@ export default function StartWorkoutScreen() {
     <ModalScreen title="Start a workout">
       <ScrollView contentContainerStyle={styles.content}>
         {workouts && workouts.length === 0 && (
-          <Card style={styles.emptyCard}>
-            <Text style={styles.emptyTitle}>No saved workouts yet</Text>
-            <Text style={[styles.hint, { color: muted }]}>
-              Create one (or start from a prebuilt Push/Pull/Legs, Upper/Lower or Full body plan),
-              then start it from here.
-            </Text>
-            <Button
-              label="Create a workout"
-              variant="soft"
+          <Card>
+            <EmptyState
               compact
-              onPress={() => router.replace('/workout-form')}
+              icon={{ ios: 'list.bullet.clipboard', material: 'assignment' }}
+              title="No saved workouts yet"
+              message="Create one, or start from a prebuilt Push/Pull/Legs, Upper/Lower or Full body plan."
+              actionLabel="Create a workout"
+              onAction={() => router.replace('/workout-form')}
             />
           </Card>
         )}

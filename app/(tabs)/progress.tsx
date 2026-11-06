@@ -1,8 +1,10 @@
-import { Link, useFocusEffect } from 'expo-router';
+import { Link, router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 
+import EmptyState from '@/components/EmptyState';
+import { ProgressSkeleton } from '@/components/ScreenSkeletons';
 import Chip from '@/components/Chip';
 import PressableLink from '@/components/PressableLink';
 import RecordTiles, { formatRecord, recordKindsFor } from '@/components/RecordTiles';
@@ -82,7 +84,6 @@ export default function ProgressScreen() {
   const [nutritionMetric, setNutritionMetric] = useState<'calories' | 'protein'>('calories');
   const tint = useThemeColor({}, 'tint');
   const surface = useThemeColor({}, 'cardRaised');
-  const muted = useThemeColor({}, 'muted');
 
   useFocusEffect(
     useCallback(() => {
@@ -139,7 +140,7 @@ export default function ProgressScreen() {
     openExercisePicker(([id]) => id && setExerciseId(id), { single: true, performedOnly: true });
   };
 
-  if (!data) return <View style={styles.container} />;
+  if (!data) return <ProgressSkeleton />;
 
   const exercise = data.exercise;
   const formatProgress = (y: number) =>
@@ -215,9 +216,14 @@ export default function ProgressScreen() {
           </>
         )}
         {!exercise && (
-          <Text style={[styles.empty, { color: muted }]}>
-            Finish a workout to see your progress here.
-          </Text>
+          <EmptyState
+            compact
+            icon={{ ios: 'chart.line.uptrend.xyaxis', material: 'show_chart' }}
+            title="No lifts to chart yet"
+            message="Finish a workout and your estimated 1-rep max for each lift is tracked here."
+            actionLabel="Start a workout"
+            onAction={() => router.push('/start-workout')}
+          />
         )}
       </Section>
 
@@ -308,7 +314,12 @@ export default function ProgressScreen() {
 
       <Section title="Personal records" subtitle="Most recently trained first. Tap for details.">
         {data.records.length === 0 ? (
-          <Text style={[styles.empty, { color: muted }]}>Records appear after your first workout.</Text>
+          <EmptyState
+            compact
+            icon={{ ios: 'trophy.fill', material: 'emoji_events' }}
+            title="No records yet"
+            message="Your heaviest lifts, best estimated 1RMs and rep records show up after your first workout."
+          />
         ) : (
           data.records.map((item, index) => (
             <RecordRow key={item.exerciseId} item={item} first={index === 0} />

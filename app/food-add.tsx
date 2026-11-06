@@ -2,7 +2,6 @@ import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useEffect, useState } from 'react';
 import {
-  Alert,
   FlatList,
   KeyboardAvoidingView,
   Platform,
@@ -12,6 +11,9 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { showAlert } from '@/components/AlertSheet';
+import { SkeletonRows } from '@/components/Skeleton';
+import EmptyState from '@/components/EmptyState';
 import Chip from '@/components/Chip';
 import IconButton from '@/components/IconButton';
 import ModalScreen from '@/components/ModalScreen';
@@ -160,7 +162,7 @@ export default function FoodAddScreen() {
   // Long press: custom meals can be edited (their ingredients); anything can be removed.
   const onLongPress = (food: SavedFood) => {
     if (!food.isRecipe) return confirmDelete(food);
-    Alert.alert(food.name, undefined, [
+    showAlert(food.name, undefined, [
       {
         text: 'Edit meal',
         onPress: () => {
@@ -174,7 +176,7 @@ export default function FoodAddScreen() {
   };
 
   const confirmDelete = (food: SavedFood) => {
-    Alert.alert(
+    showAlert(
       `Remove "${food.name}"?`,
       'It will no longer be listed here. Days you already logged it on are not changed.',
       [
@@ -273,13 +275,25 @@ export default function FoodAddScreen() {
           contentContainerStyle={{ paddingBottom: selected ? 340 : 24 }}
           ItemSeparatorComponent={() => <View style={[styles.separator, { backgroundColor: border }]} />}
           ListEmptyComponent={
-            foods ? (
-              <Text style={[styles.empty, { color: muted }]}>
-                {category === 'custom' && !search.trim()
-                  ? 'Ingredients and meals you create are saved here, so you can log them again in one tap. Build a meal from ingredients like a recipe.'
-                  : 'Nothing matches.'}
-              </Text>
-            ) : undefined
+            !foods ? (
+              <SkeletonRows />
+            ) : search.trim() ? (
+              <EmptyState
+                icon={{ ios: 'magnifyingglass', material: 'search' }}
+                title={`No results for "${search.trim()}"`}
+                message="Check the spelling, try another tab, or add it yourself."
+                actionLabel={`Create "${search.trim()}"`}
+                onAction={createFood}
+              />
+            ) : category === 'custom' ? (
+              <EmptyState
+                icon={{ ios: 'fork.knife', material: 'restaurant' }}
+                title="Nothing custom yet"
+                message="Create an ingredient, or build a meal from ingredients like a recipe. It's saved here for next time."
+              />
+            ) : (
+              <EmptyState icon={{ ios: 'tray', material: 'inbox' }} title="Nothing here" />
+            )
           }
           ListFooterComponent={
             category !== 'custom' && foods ? (

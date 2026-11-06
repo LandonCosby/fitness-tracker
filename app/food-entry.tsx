@@ -1,8 +1,15 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Switch } from 'react-native';
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Switch,
+} from 'react-native';
 
+import { showAlert } from '@/components/AlertSheet';
+import { FormSkeleton } from '@/components/ScreenSkeletons';
 import Chip from '@/components/Chip';
 import ModalScreen from '@/components/ModalScreen';
 import { Text, TextInput, View, useThemeColor } from '@/components/Themed';
@@ -135,7 +142,7 @@ export default function FoodEntryScreen() {
 
   const confirmDelete = () => {
     if (!id) return;
-    Alert.alert('Delete entry?', `"${name}" will be removed from this day.`, [
+    showAlert('Delete entry?', `"${name}" will be removed from this day.`, [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',
@@ -150,7 +157,12 @@ export default function FoodEntryScreen() {
 
   const title = isEditing ? 'Edit entry' : 'Create ingredient';
 
-  if (!loaded) return <ModalScreen title={title}>{null}</ModalScreen>;
+  if (!loaded)
+    return (
+      <ModalScreen title={title}>
+        <FormSkeleton fields={5} />
+      </ModalScreen>
+    );
 
   const totals =
     caloriesValue != null && servingsValue && servingsValue !== 1

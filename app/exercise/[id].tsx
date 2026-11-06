@@ -1,8 +1,10 @@
 import { Link, Stack, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Pressable, ScrollView, StyleSheet } from 'react-native';
 
+import { showAlert } from '@/components/AlertSheet';
+import { CardListSkeleton } from '@/components/ScreenSkeletons';
 import Badge, { NO_EQUIPMENT_LABEL } from '@/components/Badge';
 import PressableLink from '@/components/PressableLink';
 import RecordTiles from '@/components/RecordTiles';
@@ -48,7 +50,7 @@ export default function ExerciseDetailScreen() {
 
   const confirmDelete = () => {
     if (!exercise) return;
-    Alert.alert('Delete exercise?', `"${exercise.name}" will be removed from your library.`, [
+    showAlert('Delete exercise?', `"${exercise.name}" will be removed from your library.`, [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',
@@ -61,7 +63,7 @@ export default function ExerciseDetailScreen() {
     ]);
   };
 
-  if (exercise === undefined) return <View style={styles.container} />;
+  if (exercise === undefined) return <CardListSkeleton count={3} header={false} />;
 
   if (exercise === null) {
     return (

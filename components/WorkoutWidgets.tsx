@@ -1,8 +1,9 @@
 import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useState } from 'react';
-import { Alert, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 
+import { showAlert } from '@/components/AlertSheet';
 import Elapsed from '@/components/Elapsed';
 import PressableLink from '@/components/PressableLink';
 import { Text, View, useThemeColor } from '@/components/Themed';
@@ -27,7 +28,7 @@ export function useStartWorkout(active: ActiveSession) {
   const start = async (workoutId: string | null) => {
     if (active) {
       const activeId = active.id;
-      Alert.alert('Workout in progress', 'Finish or discard it before starting another.', [
+      showAlert('Workout in progress', 'Finish or discard it before starting another.', [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Resume', onPress: () => router.push(sessionHref(activeId)) },
       ]);

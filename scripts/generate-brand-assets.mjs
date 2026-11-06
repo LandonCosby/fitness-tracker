@@ -62,6 +62,24 @@ function write(name, canvas) {
   drawLogo(c, 512, 512, 760, ACCENT, ACCENT_DARK);
   write('icon.png', c);
 }
+// iOS 18+ home screen appearances (app.json ios.icon.dark / .tinted). Dark: the logo on a
+// transparent background (iOS supplies the dark backdrop). Tinted: a grayscale logo that
+// iOS colors with the user's tint; brightness carries the shading.
+{
+  const dark = createCanvas(1024, 1024);
+  drawLogo(dark, 512, 512, 760, ACCENT, ACCENT_DARK);
+  write('icon-dark.png', dark);
+
+  const tinted = createCanvas(1024, 1024);
+  drawLogo(tinted, 512, 512, 760, '#F2F2F2', '#9A9A9A');
+  write('icon-tinted.png', tinted);
+}
+// Web favicon (48 × 48): solid background so it reads on light and dark browser tabs.
+{
+  const c = createCanvas(48, 48, hex(BACKGROUND));
+  drawLogo(c, 24, 24, 40, ACCENT, ACCENT_DARK);
+  write('favicon.png', c);
+}
 // Splash image: logo on transparent; the splash background color comes from app.json.
 {
   const c = createCanvas(1024, 1024);

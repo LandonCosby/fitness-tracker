@@ -2,12 +2,12 @@ import { Link, Stack, router, useFocusEffect, useLocalSearchParams } from 'expo-
 import { useSQLiteContext } from 'expo-sqlite';
 import { SymbolView } from 'expo-symbols';
 import { useCallback, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Pressable, ScrollView, StyleSheet } from 'react-native';
 
+import { showAlert } from '@/components/AlertSheet';
+import { SessionSkeleton } from '@/components/ScreenSkeletons';
 import Elapsed from '@/components/Elapsed';
 import IconButton from '@/components/IconButton';
-import { RECORD_LABELS, formatRecord } from '@/components/RecordTiles';
-import { getNewRecords } from '@/db/progress';
 import { Text, TextInput, View, useThemeColor } from '@/components/Themed';
 import { Button, Card } from '@/components/ui';
 import {
@@ -58,7 +58,7 @@ export default function SessionScreen() {
     }, [db, id])
   );
 
-  if (session === undefined) return <View style={styles.container} />;
+  if (session === undefined) return <SessionSkeleton />;
 
   if (session === null) {
     return (
@@ -76,7 +76,7 @@ export default function SessionScreen() {
   const doneSets = active ? allSets.filter((s) => s.completed).length : totalSets;
 
   const discard = () => {
-    Alert.alert(
+    showAlert(
       active ? 'Discard workout?' : 'Delete workout?',
       active
         ? 'Everything logged in this workout will be thrown away.'
@@ -98,7 +98,7 @@ export default function SessionScreen() {
   const finish = async () => {
     const { unfinished, finished } = await countUnfinishedSets(db, session.id);
     if (finished === 0) {
-      Alert.alert('No sets checked off', 'Tick ✓ on the sets you did, or discard this workout.', [
+      showAlert('No sets checked off', 'Tick ✓ on the sets you did, or discard this workout.', [
         { text: 'Keep going', style: 'cancel' },
         {
           text: 'Discard',
@@ -111,7 +111,7 @@ export default function SessionScreen() {
       ]);
       return;
     }
-    Alert.alert(
+    showAlert(
       'Finish workout?',
       unfinished > 0
         ? `${unfinished} unchecked ${unfinished === 1 ? 'set' : 'sets'} will be removed.`
@@ -122,22 +122,8 @@ export default function SessionScreen() {
           text: 'Finish',
           onPress: async () => {
             await finishSession(db, session.id);
-            const records = await getNewRecords(db, session.id, unit);
-            if (records.length === 0) {
-              router.back();
-              return;
-            }
-            Alert.alert(
-              records.length === 1 ? 'New personal record!' : `${records.length} new personal records!`,
-              records
-                .map(
-                  (r) =>
-                    `${r.exerciseName}: ${RECORD_LABELS[r.kind]} ${formatRecord(r.kind, r.records, unit)}`
-                )
-                .join('\n'),
-              [{ text: 'Nice', onPress: () => router.back() }],
-              { cancelable: false }
-            );
+            // The summary (totals, muscles worked, new records) replaces the logger.
+            router.replace({ pathname: '/workout-complete/[id]', params: { id: session.id } });
           },
         },
       ]
@@ -252,7 +238,7 @@ function ActiveExercise({
   const tint = useThemeColor({}, 'tint');
 
   const remove = () => {
-    Alert.alert('Remove exercise?', `${exercise.name} and its sets will be removed from this workout.`, [
+    showAlert('Remove exercise?', `${exercise.name} and its sets will be removed from this workout.`, [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Remove',
@@ -381,7 +367,7 @@ function SetRow({
   };
 
   const confirmDelete = () => {
-    Alert.alert(`Delete set ${index + 1}?`, undefined, [
+    showAlert(`Delete set ${index + 1}?`, undefined, [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',

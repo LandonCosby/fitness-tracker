@@ -4,6 +4,7 @@ import { SymbolView } from 'expo-symbols';
 import { useCallback, useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 
+import { HomeSkeleton } from '@/components/ScreenSkeletons';
 import BodyMap from '@/components/body/BodyMap';
 import {
   RECOVERY_WINDOW_DAYS,
@@ -64,7 +65,7 @@ export default function HomeScreen() {
     }, [db])
   );
 
-  if (!data) return <View style={styles.container} />;
+  if (!data) return <HomeSkeleton />;
 
   const today = new Date(data.loadedAt).toLocaleDateString(undefined, {
     weekday: 'long',

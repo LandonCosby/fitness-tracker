@@ -252,6 +252,8 @@ export type NewRecord = {
   exerciseName: string;
   kind: RecordKind;
   records: ExerciseRecords;
+  /** Records from before this session, to show the previous best. */
+  previous: ExerciseRecords;
 };
 
 // Records a session beat, compared with every earlier session. An exercise's first
@@ -295,7 +297,7 @@ export async function getNewRecords(
       exerciseId
     );
     for (const kind of kinds) {
-      results.push({ exerciseName: exercise?.name ?? 'Exercise', kind, records: now });
+      results.push({ exerciseName: exercise?.name ?? 'Exercise', kind, records: now, previous: before });
     }
   }
   return results;

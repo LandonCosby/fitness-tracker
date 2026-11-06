@@ -1,5 +1,5 @@
 import { StyleSheet, View } from 'react-native';
-import Svg, { Ellipse, G, Polygon } from 'react-native-svg';
+import Svg, { Ellipse, G, Polygon, Polyline } from 'react-native-svg';
 
 import { Text, useThemeColor } from '@/components/Themed';
 import type { MuscleGroup } from '@/db/exerciseTags';
@@ -10,11 +10,50 @@ import {
   MIRROR_X,
   VIEW_HEIGHT,
   VIEW_WIDTH,
+  baseOutlines,
   isEllipse,
   mirror,
+  outline,
   type BodyView,
+  type Ellipse as EllipseShape,
   type Point,
 } from './bodyShapes';
+
+const toPoints = (points: Point[]) => points.map(([x, y]) => `${x},${y}`).join(' ');
+
+type PreparedView = {
+  ellipses: { key: string; shape: EllipseShape; cx: number }[];
+  base: { key: string; points: string }[];
+  muscles: { key: string; muscle: MuscleGroup; points: string }[];
+  lines: { key: string; points: string }[];
+};
+
+// Smoothing the outlines is pure geometry, so it's done once per view, not per render.
+const prepared = new Map<BodyView, PreparedView>();
+
+function prepare(view: BodyView): PreparedView {
+  const cached = prepared.get(view);
+  if (cached) return cached;
+  const result: PreparedView = { ellipses: [], base: [], muscles: [], lines: [] };
+  view.base.forEach((shape, index) => {
+    if (isEllipse(shape)) {
+      const xs = shape.center ? [shape.cx] : [shape.cx, 2 * MIRROR_X - shape.cx];
+      xs.forEach((cx, side) => result.ellipses.push({ key: `e${index}-${side}`, shape, cx }));
+    } else {
+      baseOutlines(shape).forEach((pts, side) => result.base.push({ key: `b${index}-${side}`, points: toPoints(pts) }));
+    }
+  });
+  view.muscles.forEach(({ muscle, points }, index) => {
+    [points, mirror(points)].forEach((pts, side) =>
+      result.muscles.push({ key: `m${index}-${side}`, muscle, points: toPoints(outline(pts)) })
+    );
+  });
+  view.lines.forEach((line, index) => {
+    [line, mirror(line)].forEach((pts, side) => result.lines.push({ key: `l${index}-${side}`, points: toPoints(pts) }));
+  });
+  prepared.set(view, result);
+  return result;
+}
 
 export type MuscleFill = { color: string; opacity?: number };
 
@@ -50,8 +89,6 @@ export default function BodyMap({
   );
 }
 
-const toPoints = (points: Point[]) => points.map(([x, y]) => `${x},${y}`).join(' ');
-
 function Figure({
   view,
   fills,
@@ -68,30 +105,25 @@ function Figure({
   const base = useThemeColor({}, 'cardRaised');
   const idle = useThemeColor({}, 'bodyIdle');
   const gap = useThemeColor({}, 'card');
+  const shapes = prepare(view);
 
   return (
     <Svg width={width} height={height} viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`}>
       <G>
-        {view.base.flatMap((shape, index) => {
-          if (isEllipse(shape)) {
-            const ellipses = shape.center ? [shape.cx] : [shape.cx, 2 * MIRROR_X - shape.cx];
-            return ellipses.map((cx, side) => (
-              <Ellipse key={`b${index}-${side}`} cx={cx} cy={shape.cy} rx={shape.rx} ry={shape.ry} fill={base} />
-            ));
-          }
-          const polys = shape.center ? [shape.points] : [shape.points, mirror(shape.points)];
-          return polys.map((points, side) => (
-            <Polygon key={`b${index}-${side}`} points={toPoints(points)} fill={base} />
-          ));
-        })}
+        {shapes.ellipses.map(({ key, shape, cx }) => (
+          <Ellipse key={key} cx={cx} cy={shape.cy} rx={shape.rx} ry={shape.ry} fill={base} />
+        ))}
+        {shapes.base.map(({ key, points }) => (
+          <Polygon key={key} points={points} fill={base} />
+        ))}
       </G>
       <G>
-        {view.muscles.flatMap(({ muscle, points }, index) => {
+        {shapes.muscles.map(({ key, muscle, points }) => {
           const fill = fills[muscle];
-          return [points, mirror(points)].map((pts, side) => (
+          return (
             <Polygon
-              key={`m${index}-${side}`}
-              points={toPoints(pts)}
+              key={key}
+              points={points}
               fill={fill?.color ?? idle}
               fillOpacity={fill?.opacity ?? 1}
               stroke={gap}
@@ -99,8 +131,11 @@ function Figure({
               strokeLinejoin="round"
               onPress={onMusclePress ? () => onMusclePress(muscle) : undefined}
             />
-          ));
+          );
         })}
+        {shapes.lines.map(({ key, points }) => (
+          <Polyline key={key} points={points} fill="none" stroke={gap} strokeWidth={1.1} strokeLinecap="round" />
+        ))}
       </G>
     </Svg>
   );

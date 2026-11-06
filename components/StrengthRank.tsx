@@ -1,11 +1,11 @@
 import { useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { SymbolView } from 'expo-symbols';
 import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 
 import BodyMap, { type MuscleFill } from '@/components/body/BodyMap';
 import Chip from '@/components/Chip';
+import RankBadge from '@/components/rank/RankBadge';
 import PressableLink from '@/components/PressableLink';
 import { Text, View, useThemeColor } from '@/components/Themed';
 import { Card } from '@/components/ui';
@@ -131,13 +131,7 @@ function Ranked({
   return (
     <View style={styles.ranked}>
       <View style={styles.rankRow}>
-        <View style={[styles.medal, { borderColor: color }]}>
-          <SymbolView
-            name={{ ios: 'trophy.fill', android: 'emoji_events', web: 'emoji_events' }}
-            size={26}
-            tintColor={color}
-          />
-        </View>
+        <RankBadge tier={rank.tier} level={rank.level} size={72} />
         <View style={styles.rankText}>
           <Text style={[styles.rankName, { color }]} accessibilityRole="header">
             {rank.name}
@@ -230,7 +224,13 @@ function AllRanks({
                 ]}
                 accessible
                 accessibilityLabel={`${row.name}: ${Math.round(row.oneRepMax)} ${unit}${current ? ', your rank' : ''}`}>
-                <View style={[styles.tierDot, { backgroundColor: TIER_COLORS[row.tier] }]} />
+                <RankBadge
+                  tier={row.tier}
+                  level={row.level}
+                  size={28}
+                  showDivision={false}
+                  dimmed={currentLevel != null && row.level > currentLevel}
+                />
                 <Text style={[styles.tableName, current && { color: TIER_COLORS[row.tier] }]}>
                   {row.name}
                   {current ? '  ← you' : ''}
@@ -314,11 +314,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
-  tierDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
   tableName: {
     flex: 1,
     fontSize: 14,
@@ -355,14 +350,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
-  },
-  medal: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    borderWidth: 2.5,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   rankText: {
     flex: 1,

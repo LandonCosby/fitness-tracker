@@ -1,8 +1,9 @@
 import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Pressable, ScrollView, StyleSheet } from 'react-native';
 
+import { showAlert } from '@/components/AlertSheet';
 import IconButton from '@/components/IconButton';
 import ModalScreen from '@/components/ModalScreen';
 import { Text, TextInput, View, useThemeColor } from '@/components/Themed';
@@ -65,7 +66,7 @@ export default function WeighInScreen() {
   };
 
   const confirmDelete = (entry: WeighIn) => {
-    Alert.alert(`Delete weigh-in for ${formatDay(fromDateKey(entry.date).getTime())}?`, undefined, [
+    showAlert(`Delete weigh-in for ${formatDay(fromDateKey(entry.date).getTime())}?`, undefined, [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',

@@ -1,8 +1,10 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, ScrollView, StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
 
+import { showAlert } from '@/components/AlertSheet';
+import { FormSkeleton } from '@/components/ScreenSkeletons';
 import IconButton from '@/components/IconButton';
 import ModalScreen from '@/components/ModalScreen';
 import { Text, TextInput, View, useThemeColor } from '@/components/Themed';
@@ -112,7 +114,7 @@ export default function RecipeFormScreen() {
 
   const confirmDelete = () => {
     if (!id) return;
-    Alert.alert(`Delete "${name}"?`, 'Days you already logged it on are not changed.', [
+    showAlert(`Delete "${name}"?`, 'Days you already logged it on are not changed.', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',
@@ -126,7 +128,12 @@ export default function RecipeFormScreen() {
   };
 
   const title = isEditing ? 'Edit meal' : 'Create meal';
-  if (!loaded) return <ModalScreen title={title}>{null}</ModalScreen>;
+  if (!loaded)
+    return (
+      <ModalScreen title={title}>
+        <FormSkeleton fields={3} />
+      </ModalScreen>
+    );
 
   return (
     <ModalScreen

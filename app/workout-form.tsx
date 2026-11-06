@@ -1,8 +1,10 @@
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Pressable, ScrollView, StyleSheet } from 'react-native';
 
+import { showAlert } from '@/components/AlertSheet';
+import { FormSkeleton } from '@/components/ScreenSkeletons';
 import WorkedMuscles from '@/components/body/WorkedMuscles';
 import Chip from '@/components/Chip';
 import IconButton from '@/components/IconButton';
@@ -132,7 +134,7 @@ export default function WorkoutFormScreen() {
         apply();
         return;
       }
-      Alert.alert(`Use ${preset.name}?`, 'This replaces the name, body parts and exercises you have so far.', [
+      showAlert(`Use ${preset.name}?`, 'This replaces the name, body parts and exercises you have so far.', [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Replace', onPress: apply },
       ]);
@@ -187,7 +189,7 @@ export default function WorkoutFormScreen() {
 
   const confirmDelete = () => {
     if (!id) return;
-    Alert.alert('Delete workout?', `"${name}" will be removed. Your history is kept.`, [
+    showAlert('Delete workout?', `"${name}" will be removed. Your history is kept.`, [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',
@@ -200,7 +202,7 @@ export default function WorkoutFormScreen() {
     ]);
   };
 
-  if (!loaded) return <View style={styles.container} />;
+  if (!loaded) return <FormSkeleton fields={4} />;
 
   return (
     <ScrollView

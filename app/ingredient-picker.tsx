@@ -3,6 +3,8 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
 import { FlatList, Pressable, StyleSheet } from 'react-native';
 
+import { SkeletonRows } from '@/components/Skeleton';
+import EmptyState from '@/components/EmptyState';
 import ModalScreen from '@/components/ModalScreen';
 import SegmentedControl from '@/components/SegmentedControl';
 import { Text, TextInput, View, useThemeColor } from '@/components/Themed';
@@ -63,13 +65,21 @@ export default function IngredientPickerScreen() {
         contentContainerStyle={styles.list}
         ItemSeparatorComponent={() => <View style={[styles.separator, { backgroundColor: border }]} />}
         ListEmptyComponent={
-          foods ? (
-            <Text style={[styles.empty, { color: muted }]}>
-              {source === 'custom' && !search.trim()
-                ? 'Ingredients you create show up here.'
-                : 'Nothing matches.'}
-            </Text>
-          ) : undefined
+          !foods ? (
+            <SkeletonRows />
+          ) : search.trim() ? (
+            <EmptyState
+              icon={{ ios: 'magnifyingglass', material: 'search' }}
+              title={`No results for "${search.trim()}"`}
+              message={source === 'ingredient' ? 'Try My ingredients, or a shorter search.' : 'Try the built-in Ingredients tab.'}
+            />
+          ) : (
+            <EmptyState
+              icon={{ ios: 'carrot.fill', material: 'nutrition' }}
+              title="No ingredients of your own yet"
+              message="Create one from Add food → Custom → Create ingredient."
+            />
+          )
         }
         renderItem={({ item }) => (
           <Pressable

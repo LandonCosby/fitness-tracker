@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { Platform, ScrollView, StyleSheet } from 'react-native';
 
+import { FormSkeleton } from '@/components/ScreenSkeletons';
 import IconButton from '@/components/IconButton';
 import ModalScreen from '@/components/ModalScreen';
 import SegmentedControl from '@/components/SegmentedControl';
@@ -56,7 +57,12 @@ export default function SettingsScreen() {
     };
   }, [db]);
 
-  if (!profile) return <ModalScreen title="Settings">{null}</ModalScreen>;
+  if (!profile)
+    return (
+      <ModalScreen title="Settings">
+        <FormSkeleton fields={3} />
+      </ModalScreen>
+    );
 
   const saveImperial = (nextFeet: string, nextInches: string) => {
     const f = parseInt(nextFeet, 10);

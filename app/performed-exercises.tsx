@@ -3,6 +3,8 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
 import { FlatList, Pressable, StyleSheet } from 'react-native';
 
+import { SkeletonRows } from '@/components/Skeleton';
+import EmptyState from '@/components/EmptyState';
 import ModalScreen from '@/components/ModalScreen';
 import { formatRecord, recordKindsFor } from '@/components/RecordTiles';
 import { Text, TextInput, View, useThemeColor } from '@/components/Themed';
@@ -53,13 +55,21 @@ export default function PerformedExercisesScreen() {
         contentContainerStyle={styles.list}
         ItemSeparatorComponent={() => <View style={[styles.separator, { backgroundColor: border }]} />}
         ListEmptyComponent={
-          items ? (
-            <Text style={[styles.empty, { color: muted }]}>
-              {items.length === 0
-                ? 'Finish a workout to see your lifts here.'
-                : 'None of your lifts match.'}
-            </Text>
-          ) : undefined
+          !items ? (
+            <SkeletonRows />
+          ) : items.length === 0 ? (
+            <EmptyState
+              icon={{ ios: 'dumbbell.fill', material: 'fitness_center' }}
+              title="No lifts yet"
+              message="Lifts appear here once you finish a workout with them."
+            />
+          ) : (
+            <EmptyState
+              icon={{ ios: 'magnifyingglass', material: 'search' }}
+              title={`No results for "${search.trim()}"`}
+              message="Only lifts you've logged are listed here."
+            />
+          )
         }
         renderItem={({ item }) => {
           const [kind] = recordKindsFor(item.isTimed, item.records);

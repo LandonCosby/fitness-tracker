@@ -1,8 +1,10 @@
-import { Link, useFocusEffect } from 'expo-router';
+import { Link, router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 
+import EmptyState from '@/components/EmptyState';
+import { CardListSkeleton } from '@/components/ScreenSkeletons';
 import PressableLink from '@/components/PressableLink';
 import { Text, View, useThemeColor } from '@/components/Themed';
 import { Button, Card, SectionHeader, TextAction } from '@/components/ui';
@@ -45,7 +47,7 @@ export default function WorkoutsScreen() {
     }, [db])
   );
 
-  if (!data) return <View style={styles.container} />;
+  if (!data) return <CardListSkeleton />;
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -71,14 +73,14 @@ export default function WorkoutsScreen() {
         />
         {data.workouts.length === 0 ? (
           <Card>
-            <Text style={styles.emptyTitle}>No workouts yet</Text>
-            <Text style={[styles.empty, { color: muted }]}>
-              Build a routine once and start it in one tap: pick body parts, add exercises, and set
-              sets × reps.
-            </Text>
-            <Link href="/workout-form" asChild>
-              <Button label="Create a workout" variant="soft" compact />
-            </Link>
+            <EmptyState
+              compact
+              icon={{ ios: 'dumbbell.fill', material: 'fitness_center' }}
+              title="No workouts yet"
+              message="Build a routine once and start it in one tap, or begin from a prebuilt plan like Push/Pull/Legs."
+              actionLabel="Create a workout"
+              onAction={() => router.push('/workout-form')}
+            />
           </Card>
         ) : (
           data.workouts.map((workout) => (
@@ -90,7 +92,12 @@ export default function WorkoutsScreen() {
       <View style={styles.section}>
         <SectionHeader title="History" />
         {data.history.length === 0 ? (
-          <Text style={[styles.empty, { color: muted }]}>Finished workouts will show up here.</Text>
+          <EmptyState
+            compact
+            icon={{ ios: 'clock.arrow.circlepath', material: 'history' }}
+            title="No finished workouts yet"
+            message="Every workout you finish is saved here with its sets, time and records."
+          />
         ) : (
           data.history.map((session) => <HistoryCard key={session.id} session={session} />)
         )}

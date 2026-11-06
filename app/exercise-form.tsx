@@ -3,6 +3,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Switch } from 'react-native';
 
+import { FormSkeleton } from '@/components/ScreenSkeletons';
 import { NO_EQUIPMENT_LABEL } from '@/components/Badge';
 import Chip from '@/components/Chip';
 import ModalScreen from '@/components/ModalScreen';
@@ -110,7 +111,12 @@ export default function ExerciseFormScreen() {
 
   const title = isEditing ? 'Edit exercise' : 'New exercise';
 
-  if (!loaded) return <ModalScreen title={title}>{null}</ModalScreen>;
+  if (!loaded)
+    return (
+      <ModalScreen title={title}>
+        <FormSkeleton fields={5} />
+      </ModalScreen>
+    );
 
   return (
     <ModalScreen title={title}>
