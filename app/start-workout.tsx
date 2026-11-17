@@ -1,3 +1,5 @@
+import { feedback } from '@/hooks/useFeedback';
+import { FontSize, FontWeight, Space } from '@/constants/Design';
 import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useState } from 'react';
@@ -38,6 +40,7 @@ export default function StartWorkoutScreen() {
     setStarting(true);
     try {
       // Home only opens this screen when nothing is running, but check again to be safe.
+      feedback('medium');
       const active = await getActiveSession(db);
       const sessionId = active?.id ?? (await startSession(db, workoutId, unit));
       router.back();
@@ -140,58 +143,47 @@ function WorkoutOption({
 
 const styles = StyleSheet.create({
   content: {
-    padding: 16,
-    gap: 10,
-    paddingBottom: 40,
-  },
-  emptyCard: {
-    gap: 8,
-  },
-  emptyTitle: {
-    fontSize: 17,
-    fontWeight: '800',
-  },
-  hint: {
-    fontSize: 14,
-    lineHeight: 20,
+    padding: Space.lg,
+    gap: Space.md,
+    paddingBottom: Space.bottom,
   },
   option: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: Space.md,
   },
   optionText: {
     flex: 1,
-    gap: 4,
+    gap: Space.xs,
   },
   name: {
-    fontSize: 18,
-    fontWeight: '800',
+    fontSize: FontSize.headline,
+    fontWeight: FontWeight.heavy,
   },
   detail: {
-    fontSize: 13,
+    fontSize: FontSize.caption,
   },
   tags: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
-    marginTop: 2,
+    gap: Space.sm,
+    marginTop: Space.micro,
   },
   tag: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: FontSize.caption,
+    fontWeight: FontWeight.semibold,
     borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingHorizontal: Space.sm,
+    paddingVertical: Space.xs,
     overflow: 'hidden',
   },
   go: {
-    fontSize: 15,
-    fontWeight: '800',
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.heavy,
   },
   footer: {
-    gap: 10,
-    marginTop: 8,
+    gap: Space.md,
+    marginTop: Space.sm,
   },
   pressed: {
     opacity: 0.6,

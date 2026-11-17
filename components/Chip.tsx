@@ -1,4 +1,7 @@
-import { Pressable, StyleSheet } from 'react-native';
+import { FontSize, FontWeight, Radius, Space } from '@/constants/Design';
+import MotionPressable from '@/components/MotionPressable';
+import { feedback } from '@/hooks/useFeedback';
+import { StyleSheet } from 'react-native';
 
 import { Text, useThemeColor } from '@/components/Themed';
 
@@ -17,8 +20,8 @@ export default function Chip({
   const surface = useThemeColor({}, 'cardRaised');
 
   return (
-    <Pressable
-      onPress={onPress}
+    <MotionPressable
+      onPress={() => { feedback('selection'); onPress(); }}
       accessibilityRole="button"
       accessibilityState={{ selected }}
       style={({ pressed }) => [
@@ -27,21 +30,23 @@ export default function Chip({
         pressed && styles.pressed,
       ]}>
       <Text style={[styles.label, selected && { color: background }]}>{label}</Text>
-    </Pressable>
+    </MotionPressable>
   );
 }
 
 const styles = StyleSheet.create({
   chip: {
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
+    minHeight: 44,
+    justifyContent: 'center',
+    borderRadius: Radius.pill,
+    paddingHorizontal: Space.lg,
+    paddingVertical: Space.sm,
   },
   pressed: {
     opacity: 0.6,
   },
   label: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.semibold,
   },
 });

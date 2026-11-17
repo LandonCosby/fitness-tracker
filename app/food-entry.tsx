@@ -1,8 +1,11 @@
+import { FontSize, FontWeight, Space } from '@/constants/Design';
+import { Button, Card } from '@/components/ui';
+import HeaderAction from '@/components/HeaderAction';
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
 import {
-  Pressable,
   ScrollView,
   StyleSheet,
   Switch,
@@ -66,9 +69,9 @@ export default function FoodEntryScreen() {
   const [saveToFoods, setSaveToFoods] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const allowLeave = useUnsavedChanges(JSON.stringify({ name, servingLabel, servingGrams, calories, protein, carbs, fat, servings, meal, saveToFoods }), loaded);
 
   const tint = useThemeColor({}, 'tint');
-  const background = useThemeColor({}, 'background');
   const danger = useThemeColor({}, 'danger');
   const muted = useThemeColor({}, 'muted');
 
@@ -132,6 +135,7 @@ export default function FoodEntryScreen() {
         const foodId = saveToFoods ? await saveFood(db, values) : null;
         await createEntry(db, { ...values, date, meal, servings: servingsValue, foodId });
       }
+      allowLeave();
       router.back();
     } catch {
       setError('Could not save. Please try again.');
@@ -149,6 +153,7 @@ export default function FoodEntryScreen() {
         style: 'destructive',
         onPress: async () => {
           await deleteEntry(db, id);
+          allowLeave();
           router.back();
         },
       },
@@ -170,16 +175,17 @@ export default function FoodEntryScreen() {
       : null;
 
   return (
-    <ModalScreen title={title}>
+    <ModalScreen title={title} right={<HeaderAction label="Save" onPress={save} disabled={saving} />}>
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
         automaticallyAdjustKeyboardInsets>
-        <View style={styles.field}>
+        <Card style={styles.field}>
           <Text style={styles.label}>Name</Text>
           <TextInput
             value={name}
+            accessibilityLabel="Food name"
             onChangeText={(text) => {
               setName(text);
               setError(null);
@@ -188,22 +194,24 @@ export default function FoodEntryScreen() {
             autoFocus={!isEditing && !params.name}
             autoCapitalize="sentences"
           />
-        </View>
+        </Card>
 
-        <View style={styles.field}>
+        <Card style={styles.field}>
           <Text style={styles.label}>Serving size (optional)</Text>
           <TextInput
             value={servingLabel}
+            accessibilityLabel="Serving description"
             onChangeText={setServingLabel}
             placeholder="e.g. 1 cup, 170 g, 1 bar"
           />
-        </View>
+        </Card>
 
         {!isEditing && (
-          <View style={styles.field}>
+          <Card style={styles.field}>
             <Text style={styles.label}>Serving weight in grams (optional)</Text>
             <TextInput
               value={servingGrams}
+            accessibilityLabel="Serving weight in grams"
               onChangeText={(text) => setServingGrams(decimalOnly(text))}
               placeholder="e.g. 170"
               keyboardType="decimal-pad"
@@ -212,10 +220,10 @@ export default function FoodEntryScreen() {
             <Text style={[styles.hint, { color: muted }]}>
               Lets you log this food by weight (grams or ounces) next time.
             </Text>
-          </View>
+          </Card>
         )}
 
-        <View style={styles.field}>
+        <Card style={styles.field}>
           <Text style={styles.label}>Per serving</Text>
           <View style={styles.grid}>
             <NumberField
@@ -253,13 +261,14 @@ export default function FoodEntryScreen() {
               gram of protein and carbs, 9 per gram of fat).
             </Text>
           )}
-        </View>
+        </Card>
 
-        <View style={styles.field}>
+        <Card style={styles.field}>
           <Text style={styles.label}>Servings eaten</Text>
           <TextInput
             style={styles.servingsInput}
             value={servings}
+            accessibilityLabel="Servings eaten"
             onChangeText={(text) => setServings(decimalOnly(text))}
             keyboardType="decimal-pad"
             maxLength={5}
@@ -271,9 +280,9 @@ export default function FoodEntryScreen() {
               {formatNumber(totals.carbsG)} · F {formatNumber(totals.fatG)}
             </Text>
           )}
-        </View>
+        </Card>
 
-        <View style={styles.field}>
+        <Card style={styles.field}>
           <Text style={styles.label}>Meal</Text>
           <View style={styles.chips}>
             {MEALS.map((m) => (
@@ -285,7 +294,7 @@ export default function FoodEntryScreen() {
               />
             ))}
           </View>
-        </View>
+        </Card>
 
         {!isEditing && (
           <View style={styles.switchRow}>
@@ -304,29 +313,10 @@ export default function FoodEntryScreen() {
 
         {error && <Text style={[styles.error, { color: danger }]}>{error}</Text>}
 
-        <Pressable
-          onPress={save}
-          disabled={saving}
-          style={({ pressed }) => [
-            styles.saveButton,
-            { backgroundColor: tint },
-            (pressed || saving) && styles.pressed,
-          ]}>
-          <Text style={[styles.saveLabel, { color: background }]}>
-            {isEditing ? 'Save changes' : `Add to ${MEAL_LABELS[meal]}`}
-          </Text>
-        </Pressable>
+        <Button label={isEditing ? "Save changes" : "Save food"} onPress={save} disabled={saving} />
 
         {isEditing && (
-          <Pressable
-            onPress={confirmDelete}
-            style={({ pressed }) => [
-              styles.deleteButton,
-              { borderColor: danger },
-              pressed && styles.pressed,
-            ]}>
-            <Text style={[styles.deleteLabel, { color: danger }]}>Delete entry</Text>
-          </Pressable>
+          <Button label="Delete entry" variant="danger" onPress={confirmDelete} />
         )}
       </ScrollView>
     </ModalScreen>
@@ -370,32 +360,33 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: 16,
-    gap: 20,
-    paddingBottom: 40,
+    padding: Space.lg,
+    gap: Space.xl,
+    paddingBottom: Space.bottom,
   },
   field: {
-    gap: 8,
+    gap: Space.sm,
   },
   label: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.semibold,
   },
   hint: {
-    fontSize: 13,
+    fontSize: FontSize.caption,
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: Space.md,
   },
   numberField: {
+    minWidth: 120,
     width: '47%',
     flexGrow: 1,
-    gap: 4,
+    gap: Space.xs,
   },
   numberLabel: {
-    fontSize: 13,
+    fontSize: FontSize.caption,
   },
   servingsInput: {
     width: 96,
@@ -403,40 +394,18 @@ const styles = StyleSheet.create({
   chips: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: Space.sm,
   },
   switchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: Space.md,
   },
   switchText: {
     flex: 1,
-    gap: 2,
+    gap: Space.micro,
   },
   error: {
-    fontSize: 14,
-  },
-  saveButton: {
-    borderRadius: 14,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  saveLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  deleteButton: {
-    borderWidth: 1,
-    borderRadius: 14,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  deleteLabel: {
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  pressed: {
-    opacity: 0.6,
+    fontSize: FontSize.body,
   },
 });

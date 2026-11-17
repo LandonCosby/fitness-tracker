@@ -1,8 +1,9 @@
+import { FontSize, FontWeight, Space } from '@/constants/Design';
 import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { Platform, ScrollView, StyleSheet } from 'react-native';
+import { Platform, ScrollView, StyleSheet, Switch } from 'react-native';
 
 import { FormSkeleton } from '@/components/ScreenSkeletons';
 import IconButton from '@/components/IconButton';
@@ -21,6 +22,7 @@ import {
   type Profile,
   type Sex,
 } from '@/db/profile';
+import { useFeedback } from '@/hooks/useFeedback';
 import { useWeightUnit } from '@/hooks/useWeightUnit';
 
 const SEX_OPTIONS: { value: Sex; label: string }[] = [
@@ -33,6 +35,7 @@ const SEX_OPTIONS: { value: Sex; label: string }[] = [
 export default function SettingsScreen() {
   const db = useSQLiteContext();
   const { unit } = useWeightUnit();
+  const { enabled: hapticsEnabled, setEnabled: setHapticsEnabled } = useFeedback();
   const imperial = unit === 'lb';
   const [profile, setProfile] = useState<Profile | null>(null);
   const [feet, setFeet] = useState('');
@@ -195,6 +198,12 @@ export default function SettingsScreen() {
           <TextAction label="Open goals & units ›" onPress={() => router.replace('/nutrition-goals')} />
         </Card>
 
+        <Card style={styles.section}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Space.lg }}>
+            <View style={{ flex: 1 }}><Text variant="headline">Haptic feedback</Text><Text variant="caption" style={{ color: muted }}>A gentle tap when you log sets and use controls.</Text></View>
+            <Switch value={hapticsEnabled} onValueChange={(next) => { void setHapticsEnabled(next); }} accessibilityLabel="Haptic feedback" />
+          </View>
+        </Card>
         {/* Use a light status bar on iOS to account for the black space above the modal */}
         <StatusBar style={Platform.OS === 'ios' ? 'light' : 'auto'} />
       </ScrollView>
@@ -204,55 +213,55 @@ export default function SettingsScreen() {
 
 const styles = StyleSheet.create({
   content: {
-    padding: 16,
-    gap: 16,
-    paddingBottom: 40,
+    padding: Space.lg,
+    gap: Space.lg,
+    paddingBottom: Space.bottom,
   },
   section: {
-    gap: 10,
+    gap: Space.md,
   },
   sectionTitle: {
-    fontSize: 17,
-    fontWeight: '800',
+    fontSize: FontSize.headline,
+    fontWeight: FontWeight.heavy,
   },
   label: {
-    fontSize: 13,
-    fontWeight: '700',
-    marginTop: 4,
+    fontSize: FontSize.caption,
+    fontWeight: FontWeight.bold,
+    marginTop: Space.xs,
   },
   heightRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: Space.sm,
   },
   heightInput: {
     width: 72,
     textAlign: 'center',
-    fontWeight: '700',
+    fontWeight: FontWeight.bold,
   },
   heightUnit: {
-    fontSize: 15,
-    fontWeight: '600',
-    marginRight: 8,
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.semibold,
+    marginRight: Space.sm,
   },
   goalRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 20,
+    gap: Space.xl,
   },
   goalValue: {
-    fontSize: 32,
-    fontWeight: '800',
+    fontSize: FontSize.display,
+    fontWeight: FontWeight.heavy,
     minWidth: 130,
     textAlign: 'center',
   },
   goalUnit: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.semibold,
   },
   hint: {
-    fontSize: 13,
+    fontSize: FontSize.caption,
     lineHeight: 18,
   },
 });

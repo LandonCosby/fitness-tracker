@@ -1,7 +1,10 @@
+import { FontSize, FontWeight, Space } from '@/constants/Design';
+import { Button, Card } from '@/components/ui';
+import HeaderAction from '@/components/HeaderAction';
 import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
 
 import { showAlert } from '@/components/AlertSheet';
 import IconButton from '@/components/IconButton';
@@ -28,8 +31,6 @@ export default function WeighInScreen() {
   const [recent, setRecent] = useState<WeighIn[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const tint = useThemeColor({}, 'tint');
-  const background = useThemeColor({}, 'background');
   const border = useThemeColor({}, 'border');
   const muted = useThemeColor({}, 'muted');
   const danger = useThemeColor({}, 'danger');
@@ -81,7 +82,7 @@ export default function WeighInScreen() {
   };
 
   return (
-    <ModalScreen title="Log weight">
+    <ModalScreen title="Log weight" right={<HeaderAction label="Save" onPress={save} disabled={saving} />}>
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.content}
@@ -126,19 +127,10 @@ export default function WeighInScreen() {
 
         {error && <Text style={{ color: danger }}>{error}</Text>}
 
-        <Pressable
-          onPress={save}
-          disabled={saving}
-          style={({ pressed }) => [
-            styles.button,
-            { backgroundColor: tint },
-            (pressed || saving) && styles.pressed,
-          ]}>
-          <Text style={[styles.buttonLabel, { color: background }]}>Save</Text>
-        </Pressable>
+        <Button label="Save weigh-in" onPress={save} disabled={saving} />
 
         {recent.length > 0 && (
-          <View style={styles.recent}>
+          <Card style={styles.recent}>
             <Text style={styles.recentTitle}>Recent</Text>
             {recent.map((entry) => (
               <View key={entry.id} style={[styles.recentRow, { borderBottomColor: border }]}>
@@ -156,7 +148,7 @@ export default function WeighInScreen() {
                 />
               </View>
             ))}
-          </View>
+          </Card>
         )}
       </ScrollView>
     </ModalScreen>
@@ -168,9 +160,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: 16,
-    gap: 16,
-    paddingBottom: 40,
+    padding: Space.lg,
+    gap: Space.lg,
+    paddingBottom: Space.bottom,
   },
   dayRow: {
     flexDirection: 'row',
@@ -178,57 +170,45 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   day: {
-    fontSize: 17,
-    fontWeight: '600',
+    fontSize: FontSize.headline,
+    fontWeight: FontWeight.semibold,
   },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: Space.sm,
   },
   input: {
     width: 140,
-    fontSize: 32,
+    fontSize: FontSize.display,
     textAlign: 'center',
   },
   unit: {
-    fontSize: 20,
-  },
-  button: {
-    borderRadius: 14,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  buttonLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  pressed: {
-    opacity: 0.6,
+    fontSize: FontSize.title,
   },
   recent: {
-    gap: 4,
-    marginTop: 8,
+    gap: Space.xs,
+    marginTop: Space.sm,
   },
   recentTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-    marginBottom: 4,
+    fontSize: FontSize.headline,
+    fontWeight: FontWeight.semibold,
+    marginBottom: Space.xs,
   },
   recentRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    gap: 12,
+    paddingVertical: Space.sm,
+    gap: Space.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   recentDate: {
     flex: 1,
-    fontSize: 15,
+    fontSize: FontSize.body,
   },
   recentValue: {
-    fontSize: 15,
+    fontSize: FontSize.body,
     fontVariant: ['tabular-nums'],
   },
 });

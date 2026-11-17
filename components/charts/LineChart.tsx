@@ -1,8 +1,13 @@
-import { useState } from 'react';
+import Animated, { useAnimatedProps, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
+import { FontSize, FontWeight } from '@/constants/Design';
+import { useEffect, useId, useRef, useState } from 'react';
+import { ChartEntrance } from '@/components/Motion';
+import ChartEmpty from '@/components/charts/ChartEmpty';
+import { feedback } from '@/hooks/useFeedback';
 import { StyleSheet, type GestureResponderEvent, type LayoutChangeEvent } from 'react-native';
-import Svg, { Circle, Line, Path, Text as SvgText } from 'react-native-svg';
+import Svg, { Circle, ClipPath, G, Defs, LinearGradient, Stop, Rect, Line, Path, Text as SvgText } from 'react-native-svg';
 
-import { Text, View, useThemeColor } from '@/components/Themed';
+import { View, useThemeColor } from '@/components/Themed';
 
 import { ChartReadout } from './ChartFrame';
 import { compactNumber, nearestIndex, niceTicks, scaleLinear } from './scale';
@@ -26,6 +31,7 @@ type Props = {
   accessibilityLabel: string;
 };
 
+const AnimatedRect = Animated.createAnimatedComponent(Rect);
 const PAD = { top: 22, right: 14, bottom: 22, left: 40 };
 
 // Single-series line chart: 2px line, end dot with a surface ring, labelled endpoint,
@@ -43,6 +49,15 @@ export default function LineChart({
 }: Props) {
   const [width, setWidth] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
+  const lastSelection = useRef<number | null>(null);
+  const gradientId = useId().replace(/:/g, '');
+  const choose = (next: number) => { if (lastSelection.current !== next) { feedback('selection'); lastSelection.current = next; } setSelected(next); };
+
+  const reduced = useReducedMotion();
+  const reveal = useSharedValue(1);
+  const identity = JSON.stringify(points);
+  useEffect(() => { reveal.set(reduced ? 1 : 0); reveal.set(withTiming(1, { duration: reduced ? 0 : 450 })); }, [identity, width, reduced, reveal]);
+  const clipProps = useAnimatedProps(() => ({ width: reveal.value * width }));
   const series = useThemeColor({}, 'chartSeries');
   const grid = useThemeColor({}, 'chartGrid');
   const axis = useThemeColor({}, 'chartAxis');
@@ -53,9 +68,7 @@ export default function LineChart({
 
   if (points.length === 0) {
     return (
-      <View style={[styles.empty, { height: height / 2, borderColor: grid }]}>
-        <Text style={{ color: muted }}>{emptyText}</Text>
-      </View>
+      <ChartEmpty message={emptyText} label={accessibilityLabel} />
     );
   }
 
@@ -89,7 +102,7 @@ export default function LineChart({
 
   const select = (event: GestureResponderEvent) => {
     const x = event.nativeEvent.locationX;
-    setSelected(nearestIndex(points.map((p) => toX(p.x)), x));
+    choose(nearestIndex(points.map((p) => toX(p.x)), x));
   };
 
   return (
@@ -103,7 +116,11 @@ export default function LineChart({
         accessible
         accessibilityLabel={accessibilityLabel}>
         {width > 0 && (
-          <Svg width={width} height={height}>
+          <ChartEntrance identity={JSON.stringify(points)}><Svg width={width} height={height}>
+            <Defs><ClipPath id={gradientId + "clip"}><AnimatedRect x={0} y={0} height={height} animatedProps={clipProps} /></ClipPath><LinearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1"><Stop offset="0" stopColor={series} stopOpacity={0.24} /><Stop offset="1" stopColor={series} stopOpacity={0} /></LinearGradient></Defs>
+            <G clipPath={"url(#" + gradientId + "clip)"}>
+            {runs.filter((run) => run.length > 1).map((run, i) => <Path key={"fill"+i} d={"M"+toX(run[0].x)+","+plotBottom+" "+run.map((p) => "L"+toX(p.x)+","+toY(p.y)).join(" ")+" L"+toX(run[run.length - 1].x)+","+plotBottom+" Z"} fill={"url(#"+gradientId+")"} />)}
+            </G>
             {ticks.map((tick) => (
               <Line
                 key={`g${tick}`}
@@ -120,7 +137,7 @@ export default function LineChart({
                 key={`t${tick}`}
                 x={PAD.left - 6}
                 y={toY(tick) + 4}
-                fontSize={11}
+                fontSize={FontSize.caption}
                 fill={muted}
                 textAnchor="end">
                 {compactNumber(tick)}
@@ -140,13 +157,14 @@ export default function LineChart({
                 <SvgText
                   x={PAD.left + 4}
                   y={toY(reference.y) - 5}
-                  fontSize={11}
+                  fontSize={FontSize.caption}
                   fill={secondary}>
                   {reference.label}
                 </SvgText>
               </>
             )}
 
+            <G clipPath={"url(#" + gradientId + "clip)"}>
             {runs.map((run, i) =>
               run.length === 1 ? (
                 <Circle key={`r${i}`} cx={toX(run[0].x)} cy={toY(run[0].y)} r={3} fill={series} />
@@ -165,6 +183,7 @@ export default function LineChart({
               )
             )}
 
+            </G>
             {active && (
               <Line
                 x1={toX(active.x)}
@@ -185,27 +204,28 @@ export default function LineChart({
               stroke={surface}
               strokeWidth={2}
             />
+            <>{active && <><Rect x={Math.max(PAD.left, Math.min(toX(active.x) - 52, plotRight - 104))} y={Math.max(0, toY(active.y) - 34)} width={104} height={25} rx={8} fill={series} /><SvgText x={Math.max(PAD.left, Math.min(toX(active.x) - 52, plotRight - 104)) + 52} y={Math.max(0, toY(active.y) - 34) + 17} fontSize={FontSize.caption} fill={surface} textAnchor="middle">{formatValue(active.y)}</SvgText></>}</>
             {!active && (
               <SvgText
                 x={Math.min(toX(last.x), plotRight)}
                 y={toY(last.y) - 10}
-                fontSize={12}
-                fontWeight="600"
+                fontSize={FontSize.caption}
+                fontWeight={FontWeight.semibold}
                 fill={text}
                 textAnchor="end">
                 {formatValue(last.y)}
               </SvgText>
             )}
 
-            <SvgText x={PAD.left} y={height - 6} fontSize={11} fill={muted}>
+            <SvgText x={PAD.left} y={height - 6} fontSize={FontSize.caption} fill={muted}>
               {formatX(xMin)}
             </SvgText>
             {xMax !== xMin && (
-              <SvgText x={plotRight} y={height - 6} fontSize={11} fill={muted} textAnchor="end">
+              <SvgText x={plotRight} y={height - 6} fontSize={FontSize.caption} fill={muted} textAnchor="end">
                 {formatX(xMax)}
               </SvgText>
             )}
-          </Svg>
+          </Svg></ChartEntrance>
         )}
         {/* Touch layer: tap or drag to read any point; release to return to the latest. */}
         <View
@@ -221,14 +241,3 @@ export default function LineChart({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  empty: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-  },
-});

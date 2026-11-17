@@ -1,3 +1,4 @@
+import { FontSize, FontWeight, Space } from '@/constants/Design';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
 import { StyleSheet } from 'react-native';
@@ -84,19 +85,19 @@ function Key({ color, opacity, label }: { color: string; opacity: number; label:
 
 const styles = StyleSheet.create({
   card: {
-    gap: 12,
+    gap: Space.md,
   },
   title: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.bold,
   },
   legend: {
-    gap: 6,
+    gap: Space.sm,
   },
   keyRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: Space.sm,
   },
   swatch: {
     width: 12,
@@ -105,9 +106,9 @@ const styles = StyleSheet.create({
   },
   keyLabel: {
     flex: 1,
-    fontSize: 13,
+    fontSize: FontSize.caption,
   },
   hint: {
-    fontSize: 13,
+    fontSize: FontSize.caption,
   },
 });

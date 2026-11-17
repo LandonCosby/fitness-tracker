@@ -1,3 +1,5 @@
+import { FontSize, FontWeight, Radius, Space } from '@/constants/Design';
+import Colors from '@/constants/Colors';
 import { useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { SymbolView } from 'expo-symbols';
@@ -243,6 +245,7 @@ function ExerciseRowContent({ exercise }: { exercise: ExerciseListItem }) {
 
   return (
     <>
+      <View style={{ width: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.dark.cardRaised, borderRadius: Radius.input }}><SymbolView name={{ ios: 'dumbbell', android: 'fitness_center', web: 'fitness_center' }} tintColor={Colors.dark.tint} size={22} /></View>
       <View style={styles.rowText}>
         <Text style={styles.name}>{exercise.name}</Text>
         <Text style={[styles.details, { color: muted }]}>{details.join(' · ')}</Text>
@@ -278,14 +281,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    gap: 10,
+    paddingHorizontal: Space.lg,
+    paddingTop: Space.md,
+    gap: Space.md,
   },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: Space.sm,
   },
   search: {
     flex: 1,
@@ -293,57 +296,62 @@ const styles = StyleSheet.create({
   advancedButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: Space.sm,
     borderWidth: 1,
-    borderRadius: 14,
-    paddingHorizontal: 10,
-    paddingVertical: 10,
+    borderRadius: Radius.button,
+    paddingHorizontal: Space.md,
+    paddingVertical: Space.md,
   },
   advancedLabel: {
-    fontSize: 15,
+    fontSize: FontSize.body,
   },
   countBadge: {
     minWidth: 20,
     height: 20,
-    borderRadius: 14,
-    paddingHorizontal: 5,
+    borderRadius: Radius.button,
+    paddingHorizontal: Space.xs,
     alignItems: 'center',
     justifyContent: 'center',
   },
   countLabel: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: FontSize.caption,
+    fontWeight: FontWeight.semibold,
   },
   panel: {
-    borderRadius: 18,
-    padding: 14,
-    gap: 14,
+    borderRadius: Radius.card,
+    padding: Space.lg,
+    gap: Space.lg,
   },
   group: {
-    gap: 8,
+    gap: Space.sm,
   },
   groupTitle: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.semibold,
   },
   chips: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: Space.sm,
   },
   clear: {
     alignSelf: 'flex-end',
   },
   resultCount: {
-    fontSize: 13,
-    paddingBottom: 6,
+    fontSize: FontSize.caption,
+    paddingBottom: Space.sm,
   },
   row: {
+    backgroundColor: Colors.dark.card,
+    borderRadius: Radius.button,
+    marginHorizontal: Space.lg,
+    marginVertical: Space.xs,
+    minHeight: 72,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 12,
+    paddingHorizontal: Space.lg,
+    paddingVertical: Space.md,
+    gap: Space.md,
   },
   pressed: {
     opacity: 0.6,
@@ -353,24 +361,24 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   name: {
-    fontSize: 16,
+    fontSize: FontSize.headline,
   },
   details: {
-    fontSize: 13,
-    marginTop: 2,
+    fontSize: FontSize.caption,
+    marginTop: Space.micro,
   },
   rowBadge: {
-    marginTop: 4,
+    marginTop: Space.xs,
     backgroundColor: 'transparent',
   },
   separator: {
-    height: StyleSheet.hairlineWidth,
-    marginLeft: 16,
+    height: 0,
+    marginLeft: Space.lg,
   },
   empty: {
     textAlign: 'center',
-    marginTop: 40,
-    paddingHorizontal: 24,
+    marginTop: Space.bottom,
+    paddingHorizontal: Space.xl,
     opacity: 0.7,
   },
 });

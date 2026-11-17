@@ -1,3 +1,5 @@
+import { feedback } from '@/hooks/useFeedback';
+import { FontSize, FontWeight, Radius, Space } from '@/constants/Design';
 import { useEffect, useState } from 'react';
 import { Modal, Pressable, StyleSheet, View, type AlertButton } from 'react-native';
 import Animated, {
@@ -38,6 +40,7 @@ export function showAlert(
     buttons: buttons && buttons.length > 0 ? buttons : [{ text: 'OK' }],
     cancelable: options?.cancelable ?? true,
   };
+  if (request.buttons.some((button) => button.style === 'destructive')) feedback('warning');
   if (present) present(request);
   else console.warn('AlertSheetHost is not mounted:', title);
 }
@@ -171,40 +174,40 @@ const styles = StyleSheet.create({
   sheet: {
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    gap: 8,
+    paddingHorizontal: Space.xl,
+    paddingTop: Space.md,
+    gap: Space.sm,
   },
   grabber: {
     alignSelf: 'center',
     width: 40,
     height: 5,
     borderRadius: 3,
-    marginBottom: 8,
+    marginBottom: Space.sm,
   },
   title: {
-    fontSize: 20,
-    fontWeight: '800',
+    fontSize: FontSize.title,
+    fontWeight: FontWeight.heavy,
   },
   message: {
-    fontSize: 15,
+    fontSize: FontSize.body,
     lineHeight: 21,
   },
   buttons: {
-    gap: 10,
-    marginTop: 12,
+    gap: Space.md,
+    marginTop: Space.md,
   },
   button: {
-    borderRadius: 14,
-    paddingVertical: 15,
+    borderRadius: Radius.button,
+    paddingVertical: Space.lg,
     alignItems: 'center',
   },
   cancelButton: {
-    marginTop: 2,
+    marginTop: Space.micro,
   },
   buttonLabel: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: FontSize.headline,
+    fontWeight: FontWeight.bold,
   },
   pressed: {
     opacity: 0.75,

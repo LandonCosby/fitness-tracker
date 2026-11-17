@@ -33,7 +33,8 @@ export default function IconButton({
       hitSlop={8}
       accessibilityRole="button"
       accessibilityLabel={label}
-      style={({ pressed }) => ({ opacity: disabled ? 0.3 : pressed ? 0.5 : 1 })}>
+      accessibilityState={{ disabled }}
+      style={({ pressed }) => ({ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', opacity: disabled ? 0.3 : pressed ? 0.5 : 1 })}>
       <SymbolView
         name={{ ios: ios as any, android: material as any, web: material as any }}
         size={size}

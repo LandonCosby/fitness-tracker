@@ -1,3 +1,4 @@
+import { FontSize, FontWeight, Radius, Space } from '@/constants/Design';
 import { StyleSheet } from 'react-native';
 
 import { Text, View, useThemeColor } from '@/components/Themed';
@@ -84,25 +85,27 @@ export default function RecordTiles({
 
 const styles = StyleSheet.create({
   row: {
+    flexWrap: 'wrap',
     flexDirection: 'row',
-    gap: 8,
+    gap: Space.sm,
   },
   tile: {
     flex: 1,
-    borderRadius: 14,
-    padding: 12,
-    gap: 2,
+    minWidth: 120,
+    borderRadius: Radius.button,
+    padding: Space.md,
+    gap: Space.micro,
   },
   label: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: FontSize.caption,
+    fontWeight: FontWeight.semibold,
   },
   value: {
-    fontSize: 18,
-    fontWeight: '800',
+    fontSize: FontSize.headline,
+    fontWeight: FontWeight.heavy,
     fontVariant: ['tabular-nums'],
   },
   detail: {
-    fontSize: 11,
+    fontSize: FontSize.caption,
   },
 });

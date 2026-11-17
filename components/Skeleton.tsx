@@ -1,3 +1,4 @@
+import { Radius, Space } from '@/constants/Design';
 import { useEffect, type ReactNode } from 'react';
 import { ScrollView, StyleSheet, View, type DimensionValue, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, {
@@ -65,7 +66,7 @@ export function SkeletonScreen({ children, padding = 16 }: { children: ReactNode
   return (
     <ScrollView
       scrollEnabled={false}
-      contentContainerStyle={{ padding, gap: 14 }}
+      contentContainerStyle={{ padding, gap: Space.lg }}
       accessibilityLabel="Loading"
       accessibilityState={{ busy: true }}>
       <Animated.View style={[styles.stack, pulse]}>{children}</Animated.View>
@@ -93,22 +94,22 @@ export function SkeletonRows({ count = 8 }: { count?: number }) {
 
 const styles = StyleSheet.create({
   stack: {
-    gap: 14,
+    gap: Space.lg,
   },
   card: {
-    borderRadius: 18,
-    padding: 16,
-    gap: 10,
+    borderRadius: Radius.card,
+    padding: Space.lg,
+    gap: Space.md,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    gap: Space.md,
+    paddingHorizontal: Space.lg,
+    paddingVertical: Space.lg,
   },
   rowText: {
     flex: 1,
-    gap: 6,
+    gap: Space.sm,
   },
 });

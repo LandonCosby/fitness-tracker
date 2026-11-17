@@ -1,7 +1,10 @@
+import { FontSize, FontWeight, Space } from '@/constants/Design';
+import { Button, Card } from '@/components/ui';
+import HeaderAction from '@/components/HeaderAction';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Switch } from 'react-native';
+import { ScrollView, StyleSheet, Switch } from 'react-native';
 
 import { FormSkeleton } from '@/components/ScreenSkeletons';
 import { NO_EQUIPMENT_LABEL } from '@/components/Badge';
@@ -36,7 +39,6 @@ export default function ExerciseFormScreen() {
   const [saving, setSaving] = useState(false);
 
   const tint = useThemeColor({}, 'tint');
-  const background = useThemeColor({}, 'background');
   const danger = useThemeColor({}, 'danger');
   const success = useThemeColor({}, 'success');
   const muted = useThemeColor({}, 'muted');
@@ -119,15 +121,16 @@ export default function ExerciseFormScreen() {
     );
 
   return (
-    <ModalScreen title={title}>
+    <ModalScreen title={title} right={<HeaderAction label="Save" onPress={save} disabled={saving} />}>
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled">
-        <View style={styles.field}>
+        <Card style={styles.field}>
           <Text style={styles.label}>Name</Text>
           <TextInput
             value={name}
+            accessibilityLabel="Exercise name"
             onChangeText={(text) => {
               setName(text);
               setError(null);
@@ -137,9 +140,9 @@ export default function ExerciseFormScreen() {
             autoCapitalize="words"
             returnKeyType="done"
           />
-        </View>
+        </Card>
 
-        <View style={styles.field}>
+        <Card style={styles.field}>
           <Text style={styles.label}>Primary muscle</Text>
           <View style={styles.chips}>
             {MUSCLE_GROUPS.map((muscle) => (
@@ -154,9 +157,9 @@ export default function ExerciseFormScreen() {
               />
             ))}
           </View>
-        </View>
+        </Card>
 
-        <View style={styles.field}>
+        <Card style={styles.field}>
           <Text style={styles.label}>Also works (optional)</Text>
           <View style={styles.chips}>
             {MUSCLE_GROUPS.filter((m) => m !== primaryMuscle).map((muscle) => (
@@ -168,9 +171,9 @@ export default function ExerciseFormScreen() {
               />
             ))}
           </View>
-        </View>
+        </Card>
 
-        <View style={styles.field}>
+        <Card style={styles.field}>
           <Text style={styles.label}>Equipment (optional)</Text>
           <View style={styles.chips}>
             {EQUIPMENT.map((item) => (
@@ -182,7 +185,7 @@ export default function ExerciseFormScreen() {
               />
             ))}
           </View>
-        </View>
+        </Card>
 
         <View style={styles.switchRow}>
           <View style={styles.switchText}>
@@ -216,18 +219,7 @@ export default function ExerciseFormScreen() {
 
         {error && <Text style={[styles.error, { color: danger }]}>{error}</Text>}
 
-        <Pressable
-          onPress={save}
-          disabled={saving}
-          style={({ pressed }) => [
-            styles.saveButton,
-            { backgroundColor: tint },
-            (pressed || saving) && styles.pressed,
-          ]}>
-          <Text style={[styles.saveLabel, { color: background }]}>
-            {isEditing ? 'Save changes' : 'Add exercise'}
-          </Text>
-        </Pressable>
+        <Button label={isEditing ? "Save changes" : "Add exercise"} onPress={save} disabled={saving} />
       </ScrollView>
     </ModalScreen>
   );
@@ -238,46 +230,34 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: 16,
-    gap: 20,
+    padding: Space.lg,
+    gap: Space.xl,
   },
   field: {
-    gap: 8,
+    gap: Space.sm,
   },
   label: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.semibold,
   },
   chips: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: Space.sm,
   },
   switchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: Space.md,
   },
   switchText: {
     flex: 1,
-    gap: 2,
+    gap: Space.micro,
   },
   hint: {
-    fontSize: 13,
+    fontSize: FontSize.caption,
   },
   error: {
-    fontSize: 14,
-  },
-  saveButton: {
-    borderRadius: 14,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  saveLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  pressed: {
-    opacity: 0.6,
+    fontSize: FontSize.body,
   },
 });

@@ -1,3 +1,4 @@
+import { FontSize, FontWeight, Radius, Space } from '@/constants/Design';
 import { Link, router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useState, type ReactNode } from 'react';
@@ -409,71 +410,68 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: 16,
-    paddingTop: 4,
-    gap: 24,
-    paddingBottom: 40,
+    padding: Space.lg,
+    paddingTop: Space.xs,
+    gap: Space.xl,
+    paddingBottom: Space.bottom,
   },
   ranges: {
     flexDirection: 'row',
-    gap: 8,
+    gap: Space.sm,
   },
   section: {
-    gap: 10,
+    gap: Space.md,
   },
   sectionCard: {
-    gap: 12,
+    gap: Space.md,
   },
   subtitle: {
-    fontSize: 13,
+    fontSize: FontSize.caption,
   },
   toggle: {
     flexDirection: 'row',
-    gap: 6,
+    gap: Space.sm,
   },
   picker: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    gap: Space.md,
+    borderRadius: Radius.input,
+    paddingHorizontal: Space.lg,
+    paddingVertical: Space.md,
   },
   pickerLabel: {
     flex: 1,
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: FontSize.headline,
+    fontWeight: FontWeight.bold,
   },
   pickerAction: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  empty: {
-    fontSize: 14,
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.bold,
   },
   recordRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingVertical: 10,
+    gap: Space.md,
+    paddingVertical: Space.md,
   },
   recordText: {
     flex: 1,
   },
   recordName: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: FontSize.headline,
+    fontWeight: FontWeight.semibold,
   },
   recordDetail: {
-    fontSize: 12,
-    marginTop: 2,
+    fontSize: FontSize.caption,
+    marginTop: Space.micro,
   },
   recordValues: {
     alignItems: 'flex-end',
   },
   recordValue: {
-    fontSize: 16,
-    fontWeight: '800',
+    fontSize: FontSize.headline,
+    fontWeight: FontWeight.heavy,
     fontVariant: ['tabular-nums'],
   },
   pressed: {

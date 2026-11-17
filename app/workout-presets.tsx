@@ -1,3 +1,4 @@
+import { FontSize, FontWeight, Space } from '@/constants/Design';
 import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
@@ -136,76 +137,76 @@ function PresetCard({
 
 const styles = StyleSheet.create({
   content: {
-    padding: 16,
-    gap: 22,
-    paddingBottom: 40,
+    padding: Space.lg,
+    gap: Space.xl,
+    paddingBottom: Space.bottom,
   },
   intro: {
-    fontSize: 14,
+    fontSize: FontSize.body,
     lineHeight: 20,
   },
   group: {
-    gap: 10,
+    gap: Space.md,
   },
   groupTitle: {
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: FontSize.caption,
+    fontWeight: FontWeight.bold,
     letterSpacing: 1,
   },
   pressed: {
     opacity: 0.7,
   },
   card: {
-    gap: 10,
+    gap: Space.md,
   },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 12,
+    gap: Space.md,
   },
   cardHeading: {
     flex: 1,
-    gap: 2,
+    gap: Space.micro,
   },
   name: {
-    fontSize: 18,
-    fontWeight: '800',
+    fontSize: FontSize.headline,
+    fontWeight: FontWeight.heavy,
   },
   description: {
-    fontSize: 13,
+    fontSize: FontSize.caption,
   },
   use: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.bold,
   },
   tags: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
+    gap: Space.sm,
   },
   tag: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: FontSize.caption,
+    fontWeight: FontWeight.semibold,
     borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingHorizontal: Space.sm,
+    paddingVertical: Space.xs,
     overflow: 'hidden',
   },
   exercises: {
-    gap: 4,
+    gap: Space.xs,
   },
   exerciseRow: {
     flexDirection: 'row',
-    gap: 10,
+    gap: Space.md,
   },
   scheme: {
     width: 64,
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.bold,
     fontVariant: ['tabular-nums'],
   },
   exerciseName: {
     flex: 1,
-    fontSize: 14,
+    fontSize: FontSize.body,
   },
 });

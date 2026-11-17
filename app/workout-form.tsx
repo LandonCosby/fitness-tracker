@@ -1,3 +1,7 @@
+import { FontSize, FontWeight, Radius, Space } from '@/constants/Design';
+import { Button, Card } from '@/components/ui';
+import HeaderAction from '@/components/HeaderAction';
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useRef, useState } from 'react';
@@ -47,11 +51,12 @@ export default function WorkoutFormScreen() {
   const [exercises, setExercises] = useState<DraftExercise[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [reordering, setReordering] = useState(false);
+  const allowLeave = useUnsavedChanges(JSON.stringify({ name, muscleGroups, exercises: exercises.map(({ exerciseId, targetSets, target }) => [exerciseId, targetSets, target]) }), loaded);
   const nextKey = useRef(0);
 
   const tint = useThemeColor({}, 'tint');
   const tintSoft = useThemeColor({}, 'tintSoft');
-  const background = useThemeColor({}, 'background');
   const card = useThemeColor({}, 'card');
   const danger = useThemeColor({}, 'danger');
   const muted = useThemeColor({}, 'muted');
@@ -179,6 +184,7 @@ export default function WorkoutFormScreen() {
         },
         id
       );
+      allowLeave();
       router.back();
     } catch {
       setError('Could not save the workout. Please try again.');
@@ -196,6 +202,7 @@ export default function WorkoutFormScreen() {
         style: 'destructive',
         onPress: async () => {
           await deleteWorkout(db, id);
+          allowLeave();
           router.back();
         },
       },
@@ -214,13 +221,7 @@ export default function WorkoutFormScreen() {
       <Stack.Screen
         options={{
           title: isEditing ? 'Edit workout' : 'New workout',
-          headerRight: () => (
-            <Pressable onPress={save} disabled={saving} hitSlop={8}>
-              <Text style={[styles.headerButton, { color: tint }, saving && styles.dimmed]}>
-                Save
-              </Text>
-            </Pressable>
-          ),
+          headerRight: () => <HeaderAction label="Save" onPress={save} disabled={saving} />,
         }}
       />
 
@@ -239,10 +240,11 @@ export default function WorkoutFormScreen() {
         </Pressable>
       )}
 
-      <View style={styles.field}>
+      <Card style={styles.field}>
         <Text style={styles.label}>Name</Text>
         <TextInput
           value={name}
+            accessibilityLabel="Workout name"
           onChangeText={(text) => {
             setName(text);
             setError(null);
@@ -251,9 +253,9 @@ export default function WorkoutFormScreen() {
           autoCapitalize="words"
           returnKeyType="done"
         />
-      </View>
+      </Card>
 
-      <View style={styles.field}>
+      <Card style={styles.field}>
         <Text style={styles.label}>Body parts</Text>
         <Text style={[styles.hint, { color: muted }]}>
           Adding exercises starts with these muscle groups selected.
@@ -274,35 +276,36 @@ export default function WorkoutFormScreen() {
             />
           ))}
         </View>
-      </View>
+      </Card>
 
       <WorkedMuscles
         exerciseIds={exercises.map((e) => e.exerciseId)}
         bodyParts={muscleGroups}
       />
 
-      <View style={styles.field}>
-        <Text style={styles.label}>Exercises</Text>
+      <Card style={styles.field}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}><Text variant="headline">Exercises</Text>{exercises.length > 1 && <Button label={reordering ? "Done reordering" : "Reorder"} variant="secondary" compact onPress={() => setReordering(!reordering)} />}</View>
+        {reordering && <Text variant="caption">Use the arrows to set your exercise order.</Text>}
         {exercises.map((exercise, index) => (
           <View key={exercise.key} style={[styles.exercise, { backgroundColor: card }]}>
             <View style={styles.exerciseHeader}>
               <Text style={styles.exerciseName}>
                 {index + 1}. {exercise.name}
               </Text>
-              <IconButton
+              {reordering && <IconButton
                 ios="chevron.up"
                 material="keyboard_arrow_up"
                 label="Move up"
                 onPress={() => move(index, -1)}
                 disabled={index === 0}
-              />
-              <IconButton
+              />}
+              {reordering && <IconButton
                 ios="chevron.down"
                 material="keyboard_arrow_down"
                 label="Move down"
                 onPress={() => move(index, 1)}
                 disabled={index === exercises.length - 1}
-              />
+              />}
               <IconButton
                 ios="xmark"
                 material="close"
@@ -345,6 +348,7 @@ export default function WorkoutFormScreen() {
                 <TextInput
                   style={styles.targetInput}
                   value={exercise.target}
+            accessibilityLabel={`${exercise.name} target ${exercise.isTimed ? 'seconds' : 'reps'}`}
                   onChangeText={(text) =>
                     updateExercise(exercise.key, { target: text.replace(/[^0-9]/g, '') })
                   }
@@ -358,34 +362,15 @@ export default function WorkoutFormScreen() {
           </View>
         ))}
 
-        <Pressable
-          onPress={addExercises}
-          style={({ pressed }) => [styles.addButton, { borderColor: tint }, pressed && styles.dimmed]}>
-          <Text style={[styles.addLabel, { color: tint }]}>+ Add exercises</Text>
-        </Pressable>
-      </View>
+        <Button label="+ Add exercises" variant="soft" onPress={addExercises} />
+      </Card>
 
       {error && <Text style={[styles.error, { color: danger }]}>{error}</Text>}
 
-      <Pressable
-        onPress={save}
-        disabled={saving}
-        style={({ pressed }) => [
-          styles.saveButton,
-          { backgroundColor: tint },
-          (pressed || saving) && styles.dimmed,
-        ]}>
-        <Text style={[styles.saveLabel, { color: background }]}>
-          {isEditing ? 'Save changes' : 'Create workout'}
-        </Text>
-      </Pressable>
+      <Button label={isEditing ? "Save changes" : "Create workout"} onPress={save} disabled={saving} />
 
       {isEditing && (
-        <Pressable
-          onPress={confirmDelete}
-          style={({ pressed }) => [styles.deleteButton, { borderColor: danger }, pressed && styles.dimmed]}>
-          <Text style={[styles.deleteLabel, { color: danger }]}>Delete workout</Text>
-        </Pressable>
+        <Button label="Delete workout" variant="danger" onPress={confirmDelete} />
       )}
     </ScrollView>
   );
@@ -396,117 +381,84 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: 16,
-    gap: 20,
-    paddingBottom: 40,
-  },
-  headerButton: {
-    fontSize: 17,
-    fontWeight: '600',
+    padding: Space.lg,
+    gap: Space.xl,
+    paddingBottom: Space.bottom,
   },
   field: {
-    gap: 8,
+    gap: Space.sm,
   },
   presetBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    borderRadius: 18,
-    padding: 16,
+    gap: Space.md,
+    borderRadius: Radius.card,
+    padding: Space.lg,
   },
   presetText: {
     flex: 1,
-    gap: 2,
+    gap: Space.micro,
   },
   presetTitle: {
-    fontSize: 16,
-    fontWeight: '800',
+    fontSize: FontSize.headline,
+    fontWeight: FontWeight.heavy,
   },
   presetChevron: {
-    fontSize: 28,
-    fontWeight: '600',
+    fontSize: FontSize.display,
+    fontWeight: FontWeight.semibold,
   },
   label: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.semibold,
   },
   hint: {
-    fontSize: 13,
+    fontSize: FontSize.caption,
   },
   chips: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: Space.sm,
   },
   exercise: {
-    borderRadius: 18,
-    padding: 14,
-    gap: 10,
+    borderRadius: Radius.card,
+    padding: Space.lg,
+    gap: Space.md,
   },
   exerciseHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: Space.md,
   },
   exerciseName: {
     flex: 1,
-    fontSize: 16,
-    fontWeight: '500',
+    fontSize: FontSize.headline,
+    fontWeight: FontWeight.medium,
   },
   targets: {
+    flexWrap: 'wrap',
     flexDirection: 'row',
-    gap: 24,
+    gap: Space.xl,
   },
   target: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: Space.sm,
   },
   targetLabel: {
-    fontSize: 14,
+    fontSize: FontSize.body,
   },
   setCount: {
-    fontSize: 16,
+    fontSize: FontSize.headline,
     minWidth: 20,
     textAlign: 'center',
   },
   targetInput: {
     width: 64,
     textAlign: 'center',
-    paddingVertical: 6,
-  },
-  addButton: {
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  addLabel: {
-    fontSize: 16,
-    fontWeight: '500',
+    paddingVertical: Space.sm,
   },
   error: {
-    fontSize: 14,
-  },
-  saveButton: {
-    borderRadius: 14,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  saveLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  deleteButton: {
-    borderWidth: 1,
-    borderRadius: 14,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  deleteLabel: {
-    fontSize: 16,
-    fontWeight: '500',
+    fontSize: FontSize.body,
   },
   dimmed: {
     opacity: 0.5,

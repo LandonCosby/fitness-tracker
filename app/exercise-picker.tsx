@@ -1,3 +1,4 @@
+import { FontSize, FontWeight, Radius, Space } from '@/constants/Design';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
@@ -92,26 +93,23 @@ export default function ExercisePickerScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   footer: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
-    paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingHorizontal: Space.lg,
+    paddingTop: Space.md,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
   button: {
-    borderRadius: 14,
-    paddingVertical: 14,
+    borderRadius: Radius.button,
+    paddingVertical: Space.lg,
     alignItems: 'center',
   },
   buttonLabel: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: FontSize.headline,
+    fontWeight: FontWeight.semibold,
   },
   dimmed: {
     opacity: 0.5,

@@ -1,3 +1,4 @@
+import { FontSize, FontWeight, Radius, Space } from '@/constants/Design';
 import { useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 
@@ -58,42 +59,46 @@ export function ChartWithData({ rows, children }: { rows: ChartRow[]; children: 
 
 const styles = StyleSheet.create({
   wrapper: {
-    gap: 8,
+    gap: Space.sm,
   },
   readout: {
+    flexWrap: 'wrap',
     flexDirection: 'row',
     alignItems: 'baseline',
-    gap: 8,
+    gap: Space.sm,
     minHeight: 24,
   },
   readoutValue: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: FontSize.headline,
+    fontWeight: FontWeight.semibold,
   },
   readoutLabel: {
-    fontSize: 13,
+    fontSize: FontSize.caption,
   },
   toggle: {
+    minHeight: 44,
+    justifyContent: 'center',
     alignSelf: 'flex-start',
   },
   toggleLabel: {
-    fontSize: 14,
+    fontSize: FontSize.body,
   },
   table: {
-    borderRadius: 12,
-    paddingHorizontal: 12,
+    borderRadius: Radius.input,
+    paddingHorizontal: Space.md,
   },
   row: {
+    flexWrap: 'wrap',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 8,
-    gap: 12,
+    paddingVertical: Space.sm,
+    gap: Space.md,
   },
   rowLabel: {
-    fontSize: 14,
+    fontSize: FontSize.body,
   },
   rowValue: {
-    fontSize: 14,
+    fontSize: FontSize.body,
     fontVariant: ['tabular-nums'],
   },
 });

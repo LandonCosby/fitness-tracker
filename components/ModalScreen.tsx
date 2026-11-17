@@ -1,6 +1,8 @@
+import { FontSize, FontWeight, Space } from '@/constants/Design';
 import { router } from 'expo-router';
+import IconButton from '@/components/IconButton';
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Text, View, useThemeColor } from '@/components/Themed';
@@ -24,20 +26,12 @@ export default function ModalScreen({
 }) {
   const background = useThemeColor({}, 'background');
   const border = useThemeColor({}, 'border');
-  const tint = useThemeColor({}, 'tint');
 
   return (
     <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: background }]}>
       <View style={[styles.bar, { borderBottomColor: border }]}>
-        <Pressable
-          onPress={() => router.back()}
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityLabel="Close"
-          style={styles.side}>
-          <Text style={[styles.close, { color: tint }]}>Close</Text>
-        </Pressable>
-        <Text style={styles.title} numberOfLines={1} accessibilityRole="header">
+        <View style={styles.side}><IconButton ios="xmark" material="close" label="Close" onPress={() => router.back()} /></View>
+        <Text style={styles.title} accessibilityRole="header">
           {title}
         </Text>
         <View style={[styles.side, styles.right]}>{right}</View>
@@ -55,23 +49,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     minHeight: 52,
-    paddingHorizontal: 16,
+    paddingHorizontal: Space.lg,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   side: {
-    width: 72,
+    minWidth: 44,
+    flexShrink: 1,
   },
   right: {
     alignItems: 'flex-end',
   },
-  close: {
-    fontSize: 17,
-    fontWeight: '600',
-  },
   title: {
     flex: 1,
-    textAlign: 'center',
-    fontSize: 17,
-    fontWeight: '700',
+    textAlign: 'left',
+    paddingHorizontal: Space.sm,
+    fontSize: FontSize.headline,
+    fontWeight: FontWeight.bold,
   },
 });

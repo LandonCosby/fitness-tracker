@@ -1,4 +1,5 @@
-import * as Haptics from 'expo-haptics';
+import { FontSize, FontWeight, Space } from '@/constants/Design';
+import { feedback } from '@/hooks/useFeedback';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { SymbolView } from 'expo-symbols';
@@ -58,10 +59,7 @@ export default function WorkoutCompleteScreen() {
       if (cancelled) return;
       setSummary({ session, records, fills });
       // A success buzz for new records; a light tap otherwise.
-      (records.length > 0
-        ? Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
-        : Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-      ).catch(() => {});
+      feedback(records.length > 0 ? 'success' : 'light');
     })();
     return () => {
       cancelled = true;
@@ -181,15 +179,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: 16,
-    gap: 18,
-    paddingBottom: 32,
+    padding: Space.lg,
+    gap: Space.lg,
+    paddingBottom: Space.xxl,
   },
   hero: {
     alignItems: 'center',
-    gap: 6,
-    paddingTop: 24,
-    paddingBottom: 6,
+    gap: Space.sm,
+    paddingTop: Space.xl,
+    paddingBottom: Space.sm,
   },
   check: {
     width: 84,
@@ -197,53 +195,53 @@ const styles = StyleSheet.create({
     borderRadius: 42,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
+    marginBottom: Space.sm,
   },
   heroTitle: {
-    fontSize: 30,
-    fontWeight: '900',
+    fontSize: FontSize.display,
+    fontWeight: FontWeight.heavy,
     letterSpacing: -0.5,
   },
   heroSubtitle: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.semibold,
   },
   stats: {
     flexDirection: 'row',
-    paddingVertical: 14,
+    paddingVertical: Space.lg,
   },
   stat: {
     flex: 1,
     alignItems: 'center',
-    gap: 2,
-    paddingHorizontal: 2,
+    gap: Space.micro,
+    paddingHorizontal: Space.micro,
   },
   statValue: {
-    fontSize: 18,
-    fontWeight: '800',
+    fontSize: FontSize.headline,
+    fontWeight: FontWeight.heavy,
     fontVariant: ['tabular-nums'],
   },
   statLabel: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: FontSize.caption,
+    fontWeight: FontWeight.semibold,
   },
   section: {
-    gap: 10,
+    gap: Space.md,
   },
   sectionTitle: {
-    fontSize: 13,
-    fontWeight: '800',
+    fontSize: FontSize.caption,
+    fontWeight: FontWeight.heavy,
     letterSpacing: 1,
     textTransform: 'uppercase',
   },
   cardTitle: {
-    fontSize: 16,
-    fontWeight: '800',
+    fontSize: FontSize.headline,
+    fontWeight: FontWeight.heavy,
   },
   record: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: Space.md,
     borderWidth: 1,
   },
   trophy: {
@@ -255,22 +253,22 @@ const styles = StyleSheet.create({
   },
   recordText: {
     flex: 1,
-    gap: 2,
+    gap: Space.micro,
   },
   recordName: {
-    fontSize: 16,
-    fontWeight: '800',
+    fontSize: FontSize.headline,
+    fontWeight: FontWeight.heavy,
   },
   recordKind: {
-    fontSize: 13,
+    fontSize: FontSize.caption,
   },
   recordValue: {
-    fontSize: 18,
-    fontWeight: '900',
+    fontSize: FontSize.headline,
+    fontWeight: FontWeight.heavy,
     fontVariant: ['tabular-nums'],
   },
   actions: {
-    gap: 10,
-    marginTop: 4,
+    gap: Space.md,
+    marginTop: Space.xs,
   },
 });

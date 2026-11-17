@@ -1,3 +1,4 @@
+import { FontSize, FontWeight, Space } from '@/constants/Design';
 import { StyleSheet, View } from 'react-native';
 import Svg, { Ellipse, G, Polygon, Polyline } from 'react-native-svg';
 
@@ -148,11 +149,11 @@ const styles = StyleSheet.create({
   },
   figure: {
     alignItems: 'center',
-    gap: 4,
+    gap: Space.xs,
   },
   label: {
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: FontSize.caption,
+    fontWeight: FontWeight.bold,
     letterSpacing: 1,
     textTransform: 'uppercase',
   },

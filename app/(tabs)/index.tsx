@@ -1,3 +1,4 @@
+import { FontSize, FontWeight, Radius, Space } from '@/constants/Design';
 import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { SymbolView } from 'expo-symbols';
@@ -241,50 +242,52 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: 16,
-    paddingTop: 4,
-    gap: 18,
-    paddingBottom: 40,
+    padding: Space.lg,
+    paddingTop: Space.xs,
+    gap: Space.lg,
+    paddingBottom: Space.bottom,
   },
   pressed: {
     opacity: 0.7,
   },
   eyebrow: {
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: FontSize.caption,
+    fontWeight: FontWeight.bold,
     letterSpacing: 1,
     marginBottom: -6,
   },
   streaks: {
+    flexWrap: 'wrap',
     flexDirection: 'row',
-    gap: 10,
+    gap: Space.md,
   },
   streakPressable: {
     flex: 1,
+    minWidth: 150,
   },
   streakCard: {
     flex: 1,
-    gap: 6,
-    padding: 14,
+    gap: Space.sm,
+    padding: Space.lg,
   },
   streakTop: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: Space.sm,
   },
   streakLabel: {
     flex: 1,
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: FontSize.caption,
+    fontWeight: FontWeight.bold,
   },
   streakValue: {
-    fontSize: 30,
-    fontWeight: '800',
+    fontSize: FontSize.display,
+    fontWeight: FontWeight.heavy,
     fontVariant: ['tabular-nums'],
   },
   streakUnit: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.bold,
   },
   streakTrack: {
     height: 5,
@@ -296,38 +299,38 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   streakDetail: {
-    fontSize: 12,
+    fontSize: FontSize.caption,
   },
   section: {
-    gap: 10,
+    gap: Space.md,
   },
   recovery: {
-    gap: 14,
+    gap: Space.lg,
   },
   muscleGroup: {
-    gap: 8,
+    gap: Space.sm,
   },
   groupLabel: {
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: FontSize.caption,
+    fontWeight: FontWeight.bold,
     letterSpacing: 1,
   },
   footnote: {
-    fontSize: 11,
+    fontSize: FontSize.caption,
     lineHeight: 15,
   },
   muscleList: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
+    gap: Space.sm,
   },
   muscleChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    gap: Space.sm,
+    borderRadius: Radius.pill,
+    paddingHorizontal: Space.md,
+    paddingVertical: Space.sm,
   },
   dot: {
     width: 8,
@@ -335,14 +338,14 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   muscleName: {
-    fontSize: 13,
-    fontWeight: '700',
+    fontSize: FontSize.caption,
+    fontWeight: FontWeight.bold,
   },
   muscleAgo: {
-    fontSize: 12,
+    fontSize: FontSize.caption,
   },
   hint: {
-    fontSize: 13,
+    fontSize: FontSize.caption,
     lineHeight: 18,
   },
 });

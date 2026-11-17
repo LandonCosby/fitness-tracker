@@ -1,3 +1,4 @@
+import { FontSize, FontWeight, Space } from '@/constants/Design';
 import { StyleSheet, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
@@ -123,14 +124,14 @@ export function RecoveryLegend() {
 
 const styles = StyleSheet.create({
   legend: {
-    gap: 6,
+    gap: Space.sm,
   },
   legendLabels: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
   legendLabel: {
-    fontSize: 11,
-    fontWeight: '600',
+    fontSize: FontSize.caption,
+    fontWeight: FontWeight.semibold,
   },
 });

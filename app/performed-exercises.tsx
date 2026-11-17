@@ -1,3 +1,4 @@
+import { FontSize, FontWeight, Space } from '@/constants/Design';
 import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
@@ -99,42 +100,37 @@ export default function PerformedExercisesScreen() {
 
 const styles = StyleSheet.create({
   header: {
-    padding: 16,
-    paddingBottom: 8,
+    padding: Space.lg,
+    paddingBottom: Space.sm,
   },
   list: {
-    paddingBottom: 32,
+    paddingBottom: Space.xxl,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    gap: Space.md,
+    paddingHorizontal: Space.lg,
+    paddingVertical: Space.md,
   },
   rowText: {
     flex: 1,
   },
   name: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: FontSize.headline,
+    fontWeight: FontWeight.semibold,
   },
   detail: {
-    fontSize: 13,
-    marginTop: 2,
+    fontSize: FontSize.caption,
+    marginTop: Space.micro,
   },
   best: {
-    fontSize: 15,
-    fontWeight: '800',
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.heavy,
   },
   separator: {
     height: StyleSheet.hairlineWidth,
-    marginLeft: 16,
-  },
-  empty: {
-    textAlign: 'center',
-    marginTop: 32,
-    paddingHorizontal: 24,
+    marginLeft: Space.lg,
   },
   pressed: {
     opacity: 0.6,

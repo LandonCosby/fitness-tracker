@@ -37,7 +37,9 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "check:design": "node scripts/check-design.mjs",
+    "assets:store": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/generate-store-assets.ps1"
   },
   "private": true
 }

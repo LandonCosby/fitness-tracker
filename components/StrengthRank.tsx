@@ -1,3 +1,4 @@
+import { FontSize, FontWeight, Radius, Space } from '@/constants/Design';
 import { useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useState } from 'react';
@@ -282,91 +283,93 @@ function ActionLink({ href, label }: { href: '/settings' | '/weigh-in'; label: s
 
 const styles = StyleSheet.create({
   card: {
-    gap: 14,
+    gap: Space.lg,
   },
   tapHint: {
-    fontSize: 12,
+    fontSize: FontSize.caption,
     textAlign: 'center',
     marginTop: -6,
   },
   allRanks: {
-    gap: 10,
+    gap: Space.md,
   },
   allRanksToggle: {
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.bold,
   },
   table: {
-    borderRadius: 12,
+    borderRadius: Radius.input,
     overflow: 'hidden',
-    paddingTop: 10,
+    paddingTop: Space.md,
   },
   tableCaption: {
-    fontSize: 12,
-    paddingHorizontal: 12,
-    paddingBottom: 8,
+    fontSize: FontSize.caption,
+    paddingHorizontal: Space.md,
+    paddingBottom: Space.sm,
   },
   tableRow: {
+    flexWrap: 'wrap',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    gap: Space.md,
+    paddingHorizontal: Space.md,
+    paddingVertical: Space.sm,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
   tableName: {
     flex: 1,
-    fontSize: 14,
-    fontWeight: '700',
+    minWidth: 110,
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.bold,
   },
   tableRatio: {
-    width: 54,
-    fontSize: 13,
+    minWidth: 54,
+    fontSize: FontSize.caption,
     textAlign: 'right',
     fontVariant: ['tabular-nums'],
   },
   tableValue: {
-    width: 76,
-    fontSize: 14,
-    fontWeight: '700',
+    minWidth: 76,
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.bold,
     textAlign: 'right',
     fontVariant: ['tabular-nums'],
   },
   chips: {
-    gap: 6,
+    gap: Space.sm,
   },
   hint: {
-    fontSize: 14,
+    fontSize: FontSize.body,
     lineHeight: 20,
   },
   footnote: {
-    fontSize: 11,
+    fontSize: FontSize.caption,
     lineHeight: 15,
   },
   ranked: {
-    gap: 12,
+    gap: Space.md,
   },
   rankRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
+    gap: Space.lg,
   },
   rankText: {
     flex: 1,
-    gap: 2,
+    gap: Space.micro,
   },
   rankName: {
-    fontSize: 26,
-    fontWeight: '900',
+    fontSize: FontSize.display,
+    fontWeight: FontWeight.heavy,
     letterSpacing: -0.3,
   },
   rankDetail: {
-    fontSize: 13,
+    fontSize: FontSize.caption,
     lineHeight: 18,
   },
   ladder: {
     flexDirection: 'row',
-    gap: 3,
+    gap: Space.xs,
     alignItems: 'center',
   },
   rung: {
@@ -378,7 +381,7 @@ const styles = StyleSheet.create({
     height: 12,
   },
   next: {
-    gap: 6,
+    gap: Space.sm,
   },
   progressTrack: {
     height: 6,
@@ -390,21 +393,21 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   nextName: {
-    fontWeight: '800',
+    fontWeight: FontWeight.heavy,
   },
   actions: {
     flexDirection: 'row',
-    gap: 8,
+    gap: Space.sm,
     flexWrap: 'wrap',
   },
   action: {
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    borderRadius: Radius.pill,
+    paddingHorizontal: Space.lg,
+    paddingVertical: Space.sm,
   },
   actionLabel: {
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.bold,
   },
   pressed: {
     opacity: 0.7,

@@ -1,8 +1,13 @@
+import HeaderAction from '@/components/HeaderAction';
+import { FontSize, FontWeight, Radius, Space } from '@/constants/Design';
+import Animated, { interpolateColor, useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
+import { MotionRow } from '@/components/Motion';
+import { feedback } from '@/hooks/useFeedback';
 import { Link, Stack, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { SymbolView } from 'expo-symbols';
-import { useCallback, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
 
 import { showAlert } from '@/components/AlertSheet';
 import { SessionSkeleton } from '@/components/ScreenSkeletons';
@@ -38,8 +43,6 @@ export default function SessionScreen() {
   // undefined while loading, null if it doesn't exist (or was deleted).
   const [session, setSession] = useState<SessionDetail | null | undefined>(undefined);
   const tint = useThemeColor({}, 'tint');
-  const success = useThemeColor({}, 'success');
-  const background = useThemeColor({}, 'background');
   const muted = useThemeColor({}, 'muted');
 
   const reload = useCallback(async () => {
@@ -121,6 +124,7 @@ export default function SessionScreen() {
         {
           text: 'Finish',
           onPress: async () => {
+            feedback('medium');
             await finishSession(db, session.id);
             // The summary (totals, muscles worked, new records) replaces the logger.
             router.replace({ pathname: '/workout-complete/[id]', params: { id: session.id } });
@@ -132,6 +136,7 @@ export default function SessionScreen() {
 
   const addExercises = () => {
     openExercisePicker(async (exerciseIds) => {
+      feedback('light');
       await addExercisesToSession(db, session.id, exerciseIds, unit);
       await reload();
     });
@@ -150,17 +155,7 @@ export default function SessionScreen() {
           title: session.name,
           headerRight: active
             ? () => (
-                <Pressable
-                  onPress={finish}
-                  hitSlop={8}
-                  accessibilityRole="button"
-                  style={({ pressed }) => [
-                    styles.finishButton,
-                    { backgroundColor: success },
-                    pressed && styles.pressed,
-                  ]}>
-                  <Text style={[styles.finishLabel, { color: background }]}>Finish</Text>
-                </Pressable>
+                <HeaderAction label="Finish" variant="success" onPress={finish} />
               )
             : undefined,
         }}
@@ -234,6 +229,7 @@ function ActiveExercise({
   onChanged: () => Promise<void>;
 }) {
   const db = useSQLiteContext();
+  const { fontScale } = useWindowDimensions();
   const muted = useThemeColor({}, 'muted');
   const tint = useThemeColor({}, 'tint');
 
@@ -252,7 +248,7 @@ function ActiveExercise({
   };
 
   return (
-    <Card style={styles.card}>
+    <MotionRow><Card style={styles.card}>
       <View style={styles.cardHeader}>
         <Link href={{ pathname: '/exercise/[id]', params: { id: exercise.exerciseId } }} asChild>
           <Pressable style={styles.cardTitle}>
@@ -268,13 +264,14 @@ function ActiveExercise({
         />
       </View>
 
+      <ScrollView horizontal showsHorizontalScrollIndicator contentContainerStyle={{ flexGrow: 1 }}><View style={{ minWidth: Math.max(300, 300 * fontScale), flex: 1 }}>
       <View style={[styles.setRow, styles.setRowBody]}>
         <Text style={[styles.colSet, styles.colHeader, { color: muted }]}>SET</Text>
         <Text style={[styles.colLast, styles.colHeader, { color: muted }]}>LAST TIME</Text>
-        <Text style={[styles.colWeight, styles.colHeader, { color: muted }]}>
+        <Text style={[styles.colWeight, { width: 72 * fontScale }, styles.colHeader, { color: muted }]}>
           {unit.toUpperCase()}
         </Text>
-        <Text style={[styles.colEffort, styles.colHeader, { color: muted }]}>
+        <Text style={[styles.colEffort, { width: 60 * fontScale }, styles.colHeader, { color: muted }]}>
           {exercise.isTimed ? 'SEC' : 'REPS'}
         </Text>
         <View style={styles.colCheck} />
@@ -292,16 +289,18 @@ function ActiveExercise({
         />
       ))}
 
+      </View></ScrollView>
       <Button
         label="+ Add set"
         variant="secondary"
         style={styles.addSet}
         onPress={async () => {
+          feedback('light');
           await addSet(db, exercise.id, unit);
           await onChanged();
         }}
       />
-    </Card>
+    </Card></MotionRow>
   );
 }
 
@@ -331,6 +330,7 @@ function SetRow({
   onChanged: () => Promise<void>;
 }) {
   const db = useSQLiteContext();
+  const { fontScale } = useWindowDimensions();
   const [weight, setWeight] = useState(() =>
     toInput(set.weight == null ? null : convertWeight(set.weight, set.unit, unit))
   );
@@ -343,6 +343,15 @@ function SetRow({
   const danger = useThemeColor({}, 'danger');
   const surface = useThemeColor({}, 'cardRaised');
   const background = useThemeColor({}, 'background');
+  const reduced = useReducedMotion();
+  const done = useSharedValue(completed ? 1 : 0);
+  const pop = useSharedValue(1);
+  useEffect(() => {
+    done.set(withTiming(completed ? 1 : 0, { duration: reduced ? 0 : 180 }));
+    if (!reduced && completed) pop.set(withSequence(withTiming(1.12, { duration: 80 }), withTiming(1, { duration: 120 })));
+  }, [completed, done, pop, reduced]);
+  const fillStyle = useAnimatedStyle(() => ({ backgroundColor: interpolateColor(done.value, [0, 1], ['transparent', successSoft]) }));
+  const checkStyle = useAnimatedStyle(() => ({ transform: [{ scale: pop.value }] }));
 
   const save =(nextWeight: string, nextEffort: string) => {
     const effortValue = parseNumber(nextEffort);
@@ -361,12 +370,14 @@ function SetRow({
       return;
     }
     const next = !completed;
+    feedback(next ? 'success' : 'light');
     setCompleted(next);
     await setSetCompleted(db, set.id, next);
     await onChanged(); // refreshes the "sets done" count
   };
 
   const confirmDelete = () => {
+    feedback('warning');
     showAlert(`Delete set ${index + 1}?`, undefined, [
       { text: 'Cancel', style: 'cancel' },
       {
@@ -381,8 +392,8 @@ function SetRow({
   };
 
   return (
-    <View style={[styles.setRow, styles.setRowBody, completed && { backgroundColor: successSoft }]}>
-      <Pressable onLongPress={confirmDelete} style={styles.colSet} accessibilityHint="Long press to delete">
+    <MotionRow><Animated.View style={[styles.setRow, styles.setRowBody, fillStyle]}>
+      <Pressable onPress={confirmDelete} style={styles.colSet} accessibilityRole="button" accessibilityLabel={`Delete set ${index + 1}`}>
         <View style={[styles.setPill, { backgroundColor: completed ? 'transparent' : surface }]}>
           <Text style={styles.setNumber}>{index + 1}</Text>
         </View>
@@ -391,7 +402,7 @@ function SetRow({
         {previous ? formatSet(previous, unit) : '—'}
       </Text>
       <TextInput
-        style={[styles.colWeight, styles.input]}
+        style={[styles.colWeight, { width: 72 * fontScale }, styles.input]}
         value={weight}
         onChangeText={(text) => {
           const clean = text.replace(/[^0-9.,]/g, '');
@@ -407,6 +418,7 @@ function SetRow({
       <TextInput
         style={[
           styles.colEffort,
+          { width: 60 * fontScale },
           styles.input,
           { borderColor: missingEffort ? danger : 'transparent' },
         ]}
@@ -423,7 +435,7 @@ function SetRow({
         selectTextOnFocus
         accessibilityLabel={`Set ${index + 1} ${isTimed ? 'seconds' : 'reps'}`}
       />
-      <View style={styles.colCheck}>
+      <Animated.View style={[styles.colCheck, checkStyle]}>
         <Pressable
           onPress={toggle}
           hitSlop={6}
@@ -442,8 +454,8 @@ function SetRow({
             tintColor={completed ? background : muted}
           />
         </Pressable>
-      </View>
-    </View>
+      </Animated.View>
+    </Animated.View></MotionRow>
   );
 }
 
@@ -486,84 +498,77 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   content: {
-    padding: 16,
-    gap: 14,
-    paddingBottom: 48,
-  },
-  finishButton: {
-    borderRadius: 999,
-    paddingHorizontal: 16,
-    paddingVertical: 7,
-  },
-  finishLabel: {
-    fontSize: 15,
-    fontWeight: '800',
+    padding: Space.lg,
+    gap: Space.lg,
+    paddingBottom: Space.bottom,
   },
   summary: {
     flexDirection: 'row',
-    gap: 12,
+    gap: Space.md,
   },
   summaryItem: {
     flex: 1,
-    gap: 2,
+    gap: Space.micro,
   },
   summaryLabel: {
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: FontSize.caption,
+    fontWeight: FontWeight.bold,
     letterSpacing: 1,
   },
   summaryValue: {
-    fontSize: 28,
-    fontWeight: '800',
+    fontSize: FontSize.display,
+    fontWeight: FontWeight.heavy,
     fontVariant: ['tabular-nums'],
   },
   summaryOf: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: FontSize.headline,
+    fontWeight: FontWeight.bold,
   },
   summaryDetail: {
-    fontSize: 13,
+    fontSize: FontSize.caption,
   },
   empty: {
     textAlign: 'center',
-    marginVertical: 24,
+    marginVertical: Space.xl,
   },
   card: {
-    paddingHorizontal: 10,
-    gap: 6,
+    paddingHorizontal: Space.md,
+    gap: Space.sm,
   },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 6,
-    marginBottom: 4,
+    gap: Space.md,
+    paddingHorizontal: Space.sm,
+    marginBottom: Space.xs,
   },
   cardTitle: {
     flex: 1,
   },
   exerciseName: {
-    fontSize: 17,
-    fontWeight: '800',
+    fontSize: FontSize.headline,
+    fontWeight: FontWeight.heavy,
   },
   setRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: Space.sm,
   },
   setRowBody: {
-    borderRadius: 10,
-    paddingVertical: 4,
-    paddingHorizontal: 6,
+    borderRadius: Radius.input,
+    paddingVertical: Space.xs,
+    paddingHorizontal: Space.sm,
   },
   colHeader: {
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: FontSize.caption,
+    fontWeight: FontWeight.bold,
     letterSpacing: 0.5,
   },
   colSet: {
-    width: 32,
+    width: 44,
+    minHeight: 44,
     alignItems: 'center',
+    justifyContent: 'center',
     textAlign: 'center',
   },
   colLast: {
@@ -578,49 +583,49 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   colCheck: {
-    width: 36,
+    width: 44,
     alignItems: 'center',
   },
   setPill: {
     width: 28,
     height: 28,
-    borderRadius: 8,
+    borderRadius: Radius.small,
     alignItems: 'center',
     justifyContent: 'center',
   },
   setNumber: {
-    fontSize: 14,
-    fontWeight: '800',
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.heavy,
   },
   last: {
-    fontSize: 13,
+    fontSize: FontSize.caption,
   },
   input: {
-    paddingVertical: 7,
-    paddingHorizontal: 4,
-    borderRadius: 8,
-    fontWeight: '700',
+    paddingVertical: Space.sm,
+    paddingHorizontal: Space.xs,
+    borderRadius: Radius.small,
+    fontWeight: FontWeight.bold,
   },
   check: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
+    width: 44,
+    height: 44,
+    borderRadius: Radius.input,
     alignItems: 'center',
     justifyContent: 'center',
   },
   addSet: {
-    marginTop: 4,
-    paddingVertical: 10,
+    marginTop: Space.xs,
+    paddingVertical: Space.md,
   },
   loggedRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 6,
+    gap: Space.md,
+    paddingHorizontal: Space.sm,
   },
   loggedValue: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.semibold,
   },
   pressed: {
     opacity: 0.6,

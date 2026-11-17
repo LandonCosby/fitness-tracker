@@ -1,3 +1,4 @@
+import { FontSize, FontWeight, Space } from '@/constants/Design';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
@@ -119,33 +120,34 @@ export default function NutritionGoalsScreen() {
 
 const styles = StyleSheet.create({
   content: {
-    padding: 16,
-    gap: 16,
-    paddingBottom: 40,
+    padding: Space.lg,
+    gap: Space.lg,
+    paddingBottom: Space.bottom,
   },
   section: {
-    gap: 12,
+    gap: Space.md,
   },
   sectionTitle: {
-    fontSize: 17,
-    fontWeight: '800',
+    fontSize: FontSize.headline,
+    fontWeight: FontWeight.heavy,
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: Space.md,
   },
   targetField: {
+    minWidth: 120,
     width: '47%',
     flexGrow: 1,
-    gap: 4,
+    gap: Space.xs,
   },
   targetLabel: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: FontSize.caption,
+    fontWeight: FontWeight.semibold,
   },
   hint: {
-    fontSize: 13,
+    fontSize: FontSize.caption,
     lineHeight: 18,
   },
 });

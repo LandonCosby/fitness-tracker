@@ -1,3 +1,4 @@
+import { FontSize, FontWeight, Radius, Space } from '@/constants/Design';
 import { SymbolView } from 'expo-symbols';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
@@ -51,12 +52,12 @@ export default function EmptyState({
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    paddingVertical: 28,
-    paddingHorizontal: 24,
-    gap: 6,
+    paddingVertical: Space.xxl,
+    paddingHorizontal: Space.xl,
+    gap: Space.sm,
   },
   compact: {
-    paddingVertical: 16,
+    paddingVertical: Space.lg,
   },
   iconCircle: {
     width: 56,
@@ -64,30 +65,30 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 6,
+    marginBottom: Space.sm,
   },
   iconCircleCompact: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    marginBottom: 2,
+    borderRadius: Radius.card,
+    marginBottom: Space.micro,
   },
   title: {
-    fontSize: 17,
-    fontWeight: '800',
+    fontSize: FontSize.headline,
+    fontWeight: FontWeight.heavy,
     textAlign: 'center',
   },
   titleCompact: {
-    fontSize: 15,
+    fontSize: FontSize.body,
   },
   message: {
-    fontSize: 14,
+    fontSize: FontSize.body,
     lineHeight: 20,
     textAlign: 'center',
     maxWidth: 320,
   },
   action: {
     alignSelf: 'center',
-    marginTop: 8,
+    marginTop: Space.sm,
   },
 });

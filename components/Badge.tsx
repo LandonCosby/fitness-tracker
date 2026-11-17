@@ -1,3 +1,4 @@
+import { FontSize, FontWeight, Space } from '@/constants/Design';
 import { StyleSheet } from 'react-native';
 
 import { Text, useThemeColor } from '@/components/Themed';
@@ -17,11 +18,11 @@ export const NO_EQUIPMENT_LABEL = 'No equipment';
 
 const styles = StyleSheet.create({
   badge: {
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: FontSize.caption,
+    fontWeight: FontWeight.bold,
     borderRadius: 6,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
+    paddingHorizontal: Space.sm,
+    paddingVertical: Space.xs,
     overflow: 'hidden',
     alignSelf: 'flex-start',
   },

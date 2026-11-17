@@ -1,3 +1,4 @@
+import { FontSize, FontWeight, Space } from '@/constants/Design';
 import { Link, router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useState } from 'react';
@@ -181,89 +182,79 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: 16,
-    paddingTop: 4,
-    gap: 24,
-    paddingBottom: 40,
+    padding: Space.lg,
+    paddingTop: Space.xs,
+    gap: Space.xl,
+    paddingBottom: Space.bottom,
   },
   pressed: {
     opacity: 0.7,
   },
   quickStart: {
-    gap: 8,
+    gap: Space.sm,
   },
   eyebrow: {
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: FontSize.caption,
+    fontWeight: FontWeight.bold,
     letterSpacing: 1,
   },
   section: {
-    gap: 10,
-  },
-  emptyTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  empty: {
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 12,
+    gap: Space.md,
   },
   workoutCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: Space.md,
   },
   workoutText: {
     flex: 1,
-    gap: 4,
+    gap: Space.xs,
   },
   cardTitle: {
-    fontSize: 18,
-    fontWeight: '800',
+    fontSize: FontSize.headline,
+    fontWeight: FontWeight.heavy,
   },
   cardDetail: {
-    fontSize: 13,
+    fontSize: FontSize.caption,
   },
   tags: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
-    marginTop: 4,
+    gap: Space.sm,
+    marginTop: Space.xs,
   },
   tag: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: FontSize.caption,
+    fontWeight: FontWeight.semibold,
     borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingHorizontal: Space.sm,
+    paddingVertical: Space.xs,
     overflow: 'hidden',
   },
   historyCard: {
-    gap: 6,
+    gap: Space.sm,
   },
   historyHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'baseline',
-    gap: 8,
+    gap: Space.sm,
   },
   historyName: {
-    fontSize: 17,
-    fontWeight: '700',
+    fontSize: FontSize.headline,
+    fontWeight: FontWeight.bold,
     flex: 1,
   },
   historyDate: {
-    fontSize: 13,
-    fontWeight: '500',
+    fontSize: FontSize.caption,
+    fontWeight: FontWeight.medium,
   },
   historyStats: {
     flexDirection: 'row',
-    gap: 14,
+    gap: Space.lg,
   },
   historyStat: {
-    fontSize: 13,
-    fontWeight: '700',
+    fontSize: FontSize.caption,
+    fontWeight: FontWeight.bold,
   },
 });

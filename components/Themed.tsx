@@ -1,3 +1,4 @@
+import { FontSize, FontWeight, Radius, Space, Typography } from '@/constants/Design';
 /**
  * Learn more about Light and Dark modes:
  * https://docs.expo.io/guides/color-schemes/
@@ -26,7 +27,7 @@ type ThemeProps = {
   darkColor?: string;
 };
 
-export type TextProps = ThemeProps & DefaultTextProps;
+export type TextProps = ThemeProps & DefaultTextProps & { variant?: keyof typeof Typography };
 export type ViewProps = ThemeProps & DefaultViewProps;
 export type TextInputProps = DefaultTextInputProps;
 
@@ -45,10 +46,10 @@ export function useThemeColor(
 }
 
 export function Text(props: TextProps) {
-  const { style, lightColor, darkColor, ...otherProps } = props;
+  const { style, lightColor, darkColor, variant = 'body', ...otherProps } = props;
   const color = useThemeColor({ light: lightColor, dark: darkColor }, 'text');
 
-  return <DefaultText style={[{ color }, style]} {...otherProps} />;
+  return <DefaultText style={[Typography[variant], { color, flexShrink: 1 }, style]} {...otherProps} />;
 }
 
 // Transparent unless lightColor/darkColor are given: the navigation theme paints the
@@ -87,11 +88,12 @@ export function TextInput(props: TextInputProps) {
             color,
             backgroundColor,
             borderColor,
+            minHeight: 44,
             borderWidth: 1,
-            borderRadius: 12,
-            paddingHorizontal: 14,
-            paddingVertical: 12,
-            fontSize: 16,
+            borderRadius: Radius.input,
+            paddingHorizontal: Space.lg,
+            paddingVertical: Space.md,
+            fontSize: FontSize.headline,
           },
           style,
         ]}
@@ -113,14 +115,14 @@ function KeyboardDoneBar({ nativeID }: { nativeID: string }) {
         style={{
           flexDirection: 'row',
           justifyContent: 'flex-end',
-          paddingHorizontal: 16,
-          paddingVertical: 8,
+          paddingHorizontal: Space.lg,
+          paddingVertical: Space.sm,
           backgroundColor: background,
           borderTopWidth: StyleSheet.hairlineWidth,
           borderTopColor: border,
         }}>
         <Pressable onPress={() => Keyboard.dismiss()} hitSlop={12} accessibilityRole="button">
-          <DefaultText style={{ color: tint, fontSize: 17, fontWeight: '700' }}>Done</DefaultText>
+          <DefaultText style={{ color: tint, fontSize: FontSize.headline, fontWeight: FontWeight.bold }}>Done</DefaultText>
         </Pressable>
       </DefaultView>
     </InputAccessoryView>

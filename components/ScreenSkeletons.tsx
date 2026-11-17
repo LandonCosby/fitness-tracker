@@ -1,3 +1,4 @@
+import { Space } from '@/constants/Design';
 import { StyleSheet, View } from 'react-native';
 
 import { Bone, SkeletonCard, SkeletonScreen } from '@/components/Skeleton';
@@ -111,7 +112,7 @@ export function NutritionSkeleton() {
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
-    gap: 10,
+    gap: Space.md,
   },
   flex: {
     flex: 1,
@@ -119,20 +120,20 @@ const styles = StyleSheet.create({
   figures: {
     flexDirection: 'row',
     justifyContent: 'space-evenly',
-    paddingVertical: 8,
+    paddingVertical: Space.sm,
   },
   setRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: Space.sm,
   },
   field: {
-    gap: 8,
+    gap: Space.sm,
   },
   button: {
-    marginTop: 8,
+    marginTop: Space.sm,
   },
   inline: {
-    gap: 14,
+    gap: Space.lg,
   },
 });

@@ -1,3 +1,6 @@
+import { FontSize, FontWeight, Radius, Space } from '@/constants/Design';
+import Colors from '@/constants/Colors';
+import { Button, Card } from '@/components/ui';
 import { Link, Stack, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useState } from 'react';
@@ -25,7 +28,6 @@ export default function ExerciseDetailScreen() {
   const [records, setRecords] = useState<ExerciseRecords | null>(null);
   const { unit } = useWeightUnit();
   const tint = useThemeColor({}, 'tint');
-  const danger = useThemeColor({}, 'danger');
   const muted = useThemeColor({}, 'muted');
 
   // Reloads on focus so changes made on the edit screen show up.
@@ -103,7 +105,8 @@ export default function ExerciseDetailScreen() {
         </View>
       )}
 
-      <View style={styles.facts}>
+      <Card style={styles.facts}>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: Space.sm }}><Badge label={MUSCLE_LABELS[exercise.primaryMuscle]} />{exercise.equipment && <Badge label={EQUIPMENT_LABELS[exercise.equipment]} />}{exercise.level && <Badge label={LEVEL_LABELS[exercise.level] ?? exercise.level} />}</View>
         <Fact label="Primary muscle" value={MUSCLE_LABELS[exercise.primaryMuscle]} />
         {exercise.secondaryMuscles.length > 0 && (
           <Fact
@@ -117,17 +120,17 @@ export default function ExerciseDetailScreen() {
         {exercise.level && <Fact label="Level" value={LEVEL_LABELS[exercise.level] ?? exercise.level} />}
         <Fact label="Logged as" value={exercise.isTimed ? 'Time (seconds)' : 'Reps'} />
         {exercise.isCustom && <Fact label="Source" value="Custom exercise" />}
-      </View>
+      </Card>
 
       {records && history.length > 0 && (
-        <View style={styles.section}>
+        <Card style={styles.section}>
           <Text style={styles.sectionTitle}>Personal records</Text>
           <RecordTiles records={records} isTimed={exercise.isTimed} unit={unit} />
-        </View>
+        </Card>
       )}
 
       {history.length > 0 && (
-        <View style={styles.section}>
+        <Card style={styles.section}>
           <Text style={styles.sectionTitle}>Recent</Text>
           {history.map((entry) => (
             <PressableLink
@@ -140,11 +143,11 @@ export default function ExerciseDetailScreen() {
               </Text>
             </PressableLink>
           ))}
-        </View>
+        </Card>
       )}
 
       {exercise.instructions.length > 0 && (
-        <View style={styles.section}>
+        <Card style={styles.section}>
           <Text style={styles.sectionTitle}>Instructions</Text>
           {exercise.instructions.map((step, index) => (
             <View key={index} style={styles.step}>
@@ -152,15 +155,11 @@ export default function ExerciseDetailScreen() {
               <Text style={styles.stepText}>{step}</Text>
             </View>
           ))}
-        </View>
+        </Card>
       )}
 
       {exercise.isCustom && (
-        <Pressable
-          onPress={confirmDelete}
-          style={({ pressed }) => [styles.deleteButton, { borderColor: danger }, pressed && styles.pressed]}>
-          <Text style={[styles.deleteLabel, { color: danger }]}>Delete exercise</Text>
-        </Pressable>
+        <Button label="Delete exercise" variant="danger" onPress={confirmDelete} />
       )}
     </ScrollView>
   );
@@ -185,68 +184,62 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   content: {
-    padding: 16,
-    gap: 24,
+    padding: Space.lg,
+    gap: Space.xl,
   },
   headerButton: {
-    fontSize: 17,
+    fontSize: FontSize.headline,
   },
   noEquipment: {
-    gap: 6,
+    gap: Space.sm,
   },
   noEquipmentHint: {
-    fontSize: 14,
+    fontSize: FontSize.body,
   },
   facts: {
-    gap: 12,
+    gap: Space.md,
   },
   fact: {
-    gap: 2,
+    gap: Space.micro,
   },
   factLabel: {
-    fontSize: 13,
+    fontSize: FontSize.caption,
   },
   factValue: {
-    fontSize: 16,
+    fontSize: FontSize.headline,
   },
   section: {
-    gap: 10,
+    gap: Space.md,
   },
   sectionTitle: {
-    fontSize: 17,
-    fontWeight: '600',
+    fontSize: FontSize.headline,
+    fontWeight: FontWeight.semibold,
   },
   step: {
+    paddingVertical: Space.sm,
     flexDirection: 'row',
-    gap: 8,
+    gap: Space.sm,
   },
   historyRow: {
-    gap: 2,
+    padding: Space.md,
+    borderRadius: Radius.input,
+    backgroundColor: Colors.dark.cardRaised,
+    gap: Space.micro,
   },
   historyDate: {
-    fontSize: 13,
+    fontSize: FontSize.caption,
   },
   historySets: {
-    fontSize: 15,
+    fontSize: FontSize.body,
   },
   stepNumber: {
-    fontSize: 15,
+    fontSize: FontSize.body,
     minWidth: 20,
   },
   stepText: {
     flex: 1,
-    fontSize: 15,
+    fontSize: FontSize.body,
     lineHeight: 21,
-  },
-  deleteButton: {
-    borderWidth: 1,
-    borderRadius: 14,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  deleteLabel: {
-    fontSize: 16,
-    fontWeight: '500',
   },
   pressed: {
     opacity: 0.6,

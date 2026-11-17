@@ -1,3 +1,4 @@
+import { FontSize, FontWeight, Radius, Space } from '@/constants/Design';
 import { SymbolView } from 'expo-symbols';
 import { Link, Tabs, type Href } from 'expo-router';
 import { Pressable, View, type ColorValue } from 'react-native';
@@ -41,9 +42,9 @@ function HeaderIconLink({
         {({ pressed }) => (
           <View
             style={{
-              width: 36,
-              height: 36,
-              borderRadius: 18,
+              width: 44,
+              height: 44,
+              borderRadius: Radius.card,
               alignItems: 'center',
               justifyContent: 'center',
               backgroundColor: accent ? palette.tintSoft : palette.card,
@@ -63,7 +64,7 @@ function HeaderIconLink({
 
 function SettingsButton() {
   return (
-    <View style={{ marginRight: 16 }}>
+    <View style={{ marginRight: Space.lg }}>
       <HeaderIconLink href="/settings" label="Settings" ios="gearshape.fill" material="settings" />
     </View>
   );
@@ -71,7 +72,7 @@ function SettingsButton() {
 
 function AddAndSettingsButtons({ href, label }: { href: Href; label: string }) {
   return (
-    <View style={{ flexDirection: 'row', gap: 10, marginRight: 16 }}>
+    <View style={{ flexDirection: 'row', gap: Space.md, marginRight: Space.lg }}>
       <HeaderIconLink href={href} label={label} ios="plus" material="add" accent />
       <HeaderIconLink href="/settings" label="Settings" ios="gearshape.fill" material="settings" />
     </View>
@@ -87,10 +88,10 @@ export default function TabLayout() {
         tabBarActiveTintColor: palette.tint,
         tabBarInactiveTintColor: palette.tabIconDefault,
         tabBarStyle: { backgroundColor: palette.card, borderTopColor: palette.border },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
+        tabBarLabelStyle: { fontSize: FontSize.caption, fontWeight: FontWeight.semibold },
         // Big, left-aligned screen titles.
         headerTitleAlign: 'left',
-        headerTitleStyle: { fontSize: 30, fontWeight: '800', letterSpacing: -0.5 },
+        headerTitleStyle: { fontSize: FontSize.display, fontWeight: FontWeight.heavy, letterSpacing: -0.5 },
         headerStyle: { backgroundColor: palette.background },
         headerShadowVisible: false,
         // Disable the static render of the header on web
@@ -105,8 +106,8 @@ export default function TabLayout() {
           tabBarLabel: 'Home',
           tabBarIcon: tabIcon('house.fill', 'home'),
           headerTitleStyle: {
-            fontSize: 30,
-            fontWeight: '900',
+            fontSize: FontSize.display,
+            fontWeight: FontWeight.heavy,
             letterSpacing: -0.5,
             color: palette.tint,
           },
@@ -126,7 +127,7 @@ export default function TabLayout() {
           title: 'Nutrition',
           tabBarIcon: tabIcon('fork.knife', 'restaurant'),
           headerRight: () => (
-            <View style={{ flexDirection: 'row', gap: 10, marginRight: 16 }}>
+            <View style={{ flexDirection: 'row', gap: Space.md, marginRight: Space.lg }}>
               <HeaderIconLink href="/nutrition-goals" label="Goals and units" ios="target" material="track_changes" accent />
               <HeaderIconLink href="/settings" label="Settings" ios="gearshape.fill" material="settings" />
             </View>

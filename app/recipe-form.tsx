@@ -1,3 +1,7 @@
+import { FontSize, FontWeight, Space } from '@/constants/Design';
+import HeaderAction from '@/components/HeaderAction';
+import MacroPills from '@/components/nutrition/MacroPills';
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useRef, useState } from 'react';
@@ -8,7 +12,7 @@ import { FormSkeleton } from '@/components/ScreenSkeletons';
 import IconButton from '@/components/IconButton';
 import ModalScreen from '@/components/ModalScreen';
 import { Text, TextInput, View, useThemeColor } from '@/components/Themed';
-import { Button, Card, TextAction } from '@/components/ui';
+import { Button, Card } from '@/components/ui';
 import { deleteFood, getFood, type SavedFood } from '@/db/nutrition';
 import { getRecipe, recipeTotals, saveRecipe, type RecipeIngredient } from '@/db/recipes';
 import { openIngredientPicker } from '@/lib/foodPicker';
@@ -49,6 +53,7 @@ export default function RecipeFormScreen() {
   const [servingsMade, setServingsMade] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const allowLeave = useUnsavedChanges(JSON.stringify({ name, servingsMade, ingredients: rows.map(({ food, amount }) => [food.id, amount]) }), loaded);
   const nextKey = useRef(0);
   const muted = useThemeColor({}, 'muted');
   const danger = useThemeColor({}, 'danger');
@@ -104,6 +109,7 @@ export default function RecipeFormScreen() {
     setSaving(true);
     try {
       await saveRecipe(db, { name, servingsMade, ingredients }, id);
+      allowLeave();
       router.back();
     } catch {
       setError('Could not save. Please try again.');
@@ -121,6 +127,7 @@ export default function RecipeFormScreen() {
         style: 'destructive',
         onPress: async () => {
           await deleteFood(db, id);
+          allowLeave();
           router.back();
         },
       },
@@ -138,7 +145,7 @@ export default function RecipeFormScreen() {
   return (
     <ModalScreen
       title={title}
-      right={<TextAction label="Save" onPress={save} accessibilityLabel="Save meal" />}>
+      right={<HeaderAction label="Save" onPress={save} disabled={saving} />}>
       <ScrollView
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
@@ -147,6 +154,7 @@ export default function RecipeFormScreen() {
           <Text style={styles.label}>Meal name</Text>
           <TextInput
             value={name}
+            accessibilityLabel="Meal name"
             onChangeText={(text) => {
               setName(text);
               setError(null);
@@ -302,58 +310,58 @@ function TotalsRow({
           {formatCalories(calories)} kcal
         </Text>
       </View>
-      <Text style={[styles.hint, { color: muted }]}>
-        P {formatNumber(protein)} g · C {formatNumber(carbs)} g · F {formatNumber(fat)} g
-      </Text>
+      <MacroPills values={{ proteinG: protein, carbsG: carbs, fatG: fat }} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   content: {
-    padding: 16,
-    gap: 16,
-    paddingBottom: 48,
+    padding: Space.lg,
+    gap: Space.lg,
+    paddingBottom: Space.bottom,
   },
   field: {
-    gap: 8,
+    gap: Space.sm,
   },
   label: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.bold,
   },
   hint: {
-    fontSize: 13,
+    fontSize: FontSize.caption,
     lineHeight: 18,
   },
   center: {
     textAlign: 'center',
   },
   ingredient: {
+    flexWrap: 'wrap',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingVertical: 12,
+    gap: Space.sm,
+    paddingVertical: Space.md,
   },
   ingredientText: {
-    flex: 1,
-    gap: 2,
+    flexGrow: 1,
+    flexBasis: 150,
+    gap: Space.micro,
   },
   ingredientName: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.bold,
   },
   amountInput: {
     width: 70,
     textAlign: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 6,
-    fontWeight: '700',
+    paddingVertical: Space.sm,
+    paddingHorizontal: Space.sm,
+    fontWeight: FontWeight.bold,
   },
   amountUnit: {
     width: 26,
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: FontSize.caption,
+    fontWeight: FontWeight.semibold,
   },
   servingsCard: {
     flexDirection: 'row',
@@ -363,19 +371,19 @@ const styles = StyleSheet.create({
   stepper: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: Space.md,
   },
   servingsValue: {
-    fontSize: 17,
-    fontWeight: '800',
+    fontSize: FontSize.headline,
+    fontWeight: FontWeight.heavy,
     minWidth: 100,
     textAlign: 'center',
   },
   totals: {
-    gap: 12,
+    gap: Space.md,
   },
   totalsRow: {
-    gap: 2,
+    gap: Space.micro,
   },
   totalsHeader: {
     flexDirection: 'row',
@@ -383,19 +391,19 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
   },
   totalsLabel: {
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: FontSize.caption,
+    fontWeight: FontWeight.bold,
     letterSpacing: 1,
   },
   totalsCalories: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: FontSize.headline,
+    fontWeight: FontWeight.bold,
   },
   totalsCaloriesStrong: {
-    fontSize: 24,
-    fontWeight: '800',
+    fontSize: FontSize.title,
+    fontWeight: FontWeight.heavy,
   },
   error: {
-    fontSize: 14,
+    fontSize: FontSize.body,
   },
 });

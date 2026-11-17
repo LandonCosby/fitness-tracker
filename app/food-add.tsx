@@ -1,3 +1,7 @@
+import { FontSize, FontWeight, Space } from '@/constants/Design';
+import AmountSheet from '@/components/nutrition/AmountSheet';
+import FoodIcon from '@/components/nutrition/FoodIcon';
+import MacroPills from '@/components/nutrition/MacroPills';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useEffect, useState } from 'react';
@@ -9,7 +13,6 @@ import {
   ScrollView,
   StyleSheet,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { showAlert } from '@/components/AlertSheet';
 import { SkeletonRows } from '@/components/Skeleton';
@@ -66,7 +69,6 @@ export default function FoodAddScreen() {
   const params = useLocalSearchParams<{ date?: string; meal?: string }>();
   const date = params.date ?? toDateKey();
   const db = useSQLiteContext();
-  const insets = useSafeAreaInsets();
 
   const [meal, setMeal] = useState<Meal>(isMeal(params.meal) ? params.meal : mealForTime());
   const [category, setCategory] = useState<FoodCategory>('ingredient');
@@ -81,7 +83,6 @@ export default function FoodAddScreen() {
 
   const border = useThemeColor({}, 'border');
   const muted = useThemeColor({}, 'muted');
-  const card = useThemeColor({}, 'card');
   const surface = useThemeColor({}, 'cardRaised');
 
   const load = useCallback(() => {
@@ -272,7 +273,7 @@ export default function FoodAddScreen() {
           keyExtractor={(item) => item.id}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
-          contentContainerStyle={{ paddingBottom: selected ? 340 : 24 }}
+          contentContainerStyle={{ paddingBottom: Space.xl }}
           ItemSeparatorComponent={() => <View style={[styles.separator, { backgroundColor: border }]} />}
           ListEmptyComponent={
             !foods ? (
@@ -314,28 +315,19 @@ export default function FoodAddScreen() {
                 selected?.id === item.id && { backgroundColor: surface },
                 pressed && styles.pressed,
               ]}>
+              <FoodIcon category={item.category} brand={item.brand} />
               <View style={styles.rowText}>
                 <Text style={styles.foodName}>{item.name}</Text>
-                <Text style={[styles.foodDetail, { color: muted }]} numberOfLines={1}>
-                  {describeServing(item)} · P {formatNumber(item.proteinG)} · C{' '}
-                  {formatNumber(item.carbsG)} · F {formatNumber(item.fatG)}
-                </Text>
+                <Text style={[styles.foodDetail, { color: muted }]}>{describeServing(item)}</Text>
+                <MacroPills values={item} />
               </View>
-              <Text style={styles.foodCalories}>{formatCalories(item.calories)} kcal</Text>
+              <View style={{ alignItems: 'flex-end', gap: Space.sm }}><Text style={styles.foodCalories}>{formatCalories(item.calories)} kcal</Text><Pressable onPress={(event) => { event.stopPropagation(); onLongPress(item); }} style={{ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' }} accessibilityRole="button" accessibilityLabel={`Options for ${item.name}`}><Text>•••</Text></Pressable></View>
             </Pressable>
           )}
         />
 
         {selected && (
-          <View
-            style={[
-              styles.sheet,
-              {
-                borderTopColor: border,
-                backgroundColor: card,
-                paddingBottom: Math.max(insets.bottom, 12),
-              },
-            ]}>
+          <AmountSheet onClose={() => setSelected(null)}>
             <View style={styles.sheetHeader}>
               <View style={styles.sheetTitleBlock}>
                 <Text style={styles.sheetTitle} numberOfLines={1}>
@@ -417,19 +409,18 @@ export default function FoodAddScreen() {
               )}
             </View>
 
+            {preview && <MacroPills values={preview} />}
             {preview && (
               <Text style={[styles.preview, { color: muted }]}>
                 {effectiveMode === 'servings'
                   ? formatServings(servingsValue, selected.servingLabel)
                   : `${formatNumber(amountValue)} ${effectiveMode}`}{' '}
                 = <Text style={styles.previewCalories}>{formatCalories(preview.calories)} kcal</Text>{' '}
-                · P {formatNumber(preview.proteinG)} · C {formatNumber(preview.carbsG)} · F{' '}
-                {formatNumber(preview.fatG)}
               </Text>
             )}
 
             <Button label={`Add to ${MEAL_LABELS[meal]}`} onPress={add} disabled={!preview || saving} />
-          </View>
+          </AmountSheet>
         )}
       </KeyboardAvoidingView>
     </ModalScreen>
@@ -455,114 +446,96 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    padding: 16,
-    paddingBottom: 8,
-    gap: 10,
+    padding: Space.lg,
+    paddingBottom: Space.sm,
+    gap: Space.md,
   },
   chips: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: Space.sm,
   },
   brandRow: {
-    gap: 6,
+    gap: Space.sm,
   },
   createRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: Space.sm,
   },
   createButton: {
     flex: 1,
-    paddingHorizontal: 8,
+    paddingHorizontal: Space.sm,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 12,
+    paddingHorizontal: Space.lg,
+    paddingVertical: Space.md,
+    gap: Space.md,
   },
   rowText: {
     flex: 1,
   },
   foodName: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: FontSize.headline,
+    fontWeight: FontWeight.semibold,
   },
   foodDetail: {
-    fontSize: 13,
-    marginTop: 2,
+    fontSize: FontSize.caption,
+    marginTop: Space.micro,
   },
   foodCalories: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontWeight: FontWeight.heavy,
+    fontSize: FontSize.headline,
     fontVariant: ['tabular-nums'],
   },
   separator: {
     height: StyleSheet.hairlineWidth,
-    marginLeft: 16,
-  },
-  empty: {
-    textAlign: 'center',
-    marginTop: 32,
-    paddingHorizontal: 24,
-    lineHeight: 20,
+    marginLeft: Space.lg,
   },
   footer: {
-    paddingVertical: 20,
+    paddingVertical: Space.xl,
     alignItems: 'center',
   },
   footerLabel: {
-    fontSize: 14,
+    fontSize: FontSize.body,
   },
   footerLink: {
-    fontWeight: '700',
-  },
-  sheet: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    gap: 12,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    fontWeight: FontWeight.bold,
   },
   sheetHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: Space.md,
   },
   sheetTitleBlock: {
     flex: 1,
   },
   sheetTitle: {
-    fontSize: 18,
-    fontWeight: '800',
+    fontSize: FontSize.headline,
+    fontWeight: FontWeight.heavy,
   },
   amountRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: Space.md,
   },
   amountLabel: {
     flex: 1,
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.semibold,
   },
   amountInput: {
     width: 84,
     textAlign: 'center',
-    paddingVertical: 8,
-    fontWeight: '700',
+    paddingVertical: Space.sm,
+    fontWeight: FontWeight.bold,
   },
   preview: {
-    fontSize: 13,
+    fontSize: FontSize.caption,
   },
   previewCalories: {
-    fontWeight: '800',
+    fontWeight: FontWeight.heavy,
   },
   pressed: {
     opacity: 0.6,

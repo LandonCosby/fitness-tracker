@@ -1,3 +1,4 @@
+import { FontSize, FontWeight, Radius, Space } from '@/constants/Design';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Text, useThemeColor } from '@/components/Themed';
@@ -36,8 +37,7 @@ export default function SegmentedControl<T extends string | number>({
             ]}>
             <Text
               style={[styles.label, compact && styles.compactLabel, selected && { color: background }]}
-              numberOfLines={1}
-              adjustsFontSizeToFit>
+>
               {option.label}
             </Text>
           </Pressable>
@@ -50,23 +50,28 @@ export default function SegmentedControl<T extends string | number>({
 const styles = StyleSheet.create({
   segmented: {
     flexDirection: 'row',
-    borderRadius: 12,
-    padding: 3,
+    flexWrap: 'wrap',
+    borderRadius: Radius.input,
+    padding: Space.xs,
   },
   segment: {
-    flex: 1,
+    flexGrow: 1,
+    flexBasis: 'auto',
+    minHeight: 44,
+    paddingHorizontal: Space.sm,
+    justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 10,
-    borderRadius: 10,
+    paddingVertical: Space.md,
+    borderRadius: Radius.input,
   },
   pressed: {
     opacity: 0.6,
   },
   label: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.bold,
   },
   compactLabel: {
-    fontSize: 13,
+    fontSize: FontSize.caption,
   },
 });

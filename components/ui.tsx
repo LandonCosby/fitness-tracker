@@ -1,5 +1,8 @@
+import { FontSize, FontWeight, Radius, Space } from '@/constants/Design';
+import MotionPressable from '@/components/MotionPressable';
+import { feedback } from '@/hooks/useFeedback';
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { Text, useThemeColor } from '@/components/Themed';
 
@@ -18,7 +21,7 @@ export function Card({
   return <View style={[styles.card, { backgroundColor }, style]}>{children}</View>;
 }
 
-type ButtonVariant = 'primary' | 'secondary' | 'soft' | 'danger';
+type ButtonVariant = 'primary' | 'secondary' | 'soft' | 'danger' | 'success';
 
 // A full-width (or self-sized with `compact`) action button.
 // primary: accent fill. soft: accent-tinted. secondary: neutral surface. danger: red text.
@@ -33,7 +36,7 @@ export function Button({
 }: {
   label: string;
   /** Optional when wrapped in <Link asChild>, which supplies it. */
-  onPress?: () => void;
+  onPress?: import('react-native').PressableProps['onPress'];
   variant?: ButtonVariant;
   compact?: boolean;
   disabled?: boolean;
@@ -46,13 +49,14 @@ export function Button({
   const cardRaised = useThemeColor({}, 'cardRaised');
   const text = useThemeColor({}, 'text');
   const danger = useThemeColor({}, 'danger');
+  const success = useThemeColor({}, 'success');
 
-  const fill = { primary: tint, soft: tintSoft, secondary: cardRaised, danger: 'transparent' }[variant];
-  const color = { primary: background, soft: tint, secondary: text, danger }[variant];
+  const fill = { primary: tint, soft: tintSoft, secondary: cardRaised, danger: 'transparent', success }[variant];
+  const color = { primary: background, soft: tint, secondary: text, danger, success: background }[variant];
 
   return (
-    <Pressable
-      onPress={onPress}
+    <MotionPressable
+      onPress={(event) => { feedback(); onPress?.(event); }}
       disabled={disabled}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
@@ -66,7 +70,7 @@ export function Button({
         style,
       ]}>
       <Text style={[styles.label, compact && styles.compactLabel, { color }]}>{label}</Text>
-    </Pressable>
+    </MotionPressable>
   );
 }
 
@@ -94,38 +98,40 @@ export function TextAction({
 }) {
   const tint = useThemeColor({}, 'tint');
   return (
-    <Pressable onPress={onPress} hitSlop={10} accessibilityRole="button" accessibilityLabel={accessibilityLabel}>
+    <MotionPressable onPress={onPress} hitSlop={10} accessibilityRole="button" accessibilityLabel={accessibilityLabel}>
       {({ pressed }) => (
         <Text style={[styles.textAction, { color: tint }, pressed && styles.pressed]}>{label}</Text>
       )}
-    </Pressable>
+    </MotionPressable>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 18,
-    padding: 16,
+    borderRadius: Radius.card,
+    padding: Space.lg,
   },
   button: {
-    borderRadius: 14,
-    paddingVertical: 15,
-    paddingHorizontal: 20,
+    minHeight: 48,
+    borderRadius: Radius.button,
+    paddingVertical: Space.lg,
+    paddingHorizontal: Space.xl,
     alignItems: 'center',
     justifyContent: 'center',
   },
   compact: {
+    minHeight: 44,
     alignSelf: 'flex-start',
-    borderRadius: 999,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    borderRadius: Radius.pill,
+    paddingVertical: Space.sm,
+    paddingHorizontal: Space.lg,
   },
   label: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: FontSize.headline,
+    fontWeight: FontWeight.bold,
   },
   compactLabel: {
-    fontSize: 14,
+    fontSize: FontSize.body,
   },
   pressed: {
     opacity: 0.7,
@@ -135,17 +141,18 @@ const styles = StyleSheet.create({
   },
   sectionHeader: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 8,
+    gap: Space.sm,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: '800',
+    fontSize: FontSize.title,
+    fontWeight: FontWeight.heavy,
     letterSpacing: -0.3,
   },
   textAction: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.bold,
   },
 });

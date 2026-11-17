@@ -1,8 +1,13 @@
-import { useState } from 'react';
+import Animated, { useAnimatedProps, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
+import { FontSize } from '@/constants/Design';
+import { useEffect, useRef, useState } from 'react';
+import { ChartEntrance } from '@/components/Motion';
+import ChartEmpty from '@/components/charts/ChartEmpty';
+import { feedback } from '@/hooks/useFeedback';
 import { StyleSheet, type GestureResponderEvent, type LayoutChangeEvent } from 'react-native';
 import Svg, { Line, Path, Text as SvgText } from 'react-native-svg';
 
-import { Text, View, useThemeColor } from '@/components/Themed';
+import { View, useThemeColor } from '@/components/Themed';
 
 import { ChartReadout } from './ChartFrame';
 import { compactNumber, niceTicks, scaleLinear } from './scale';
@@ -25,7 +30,8 @@ const RADIUS = 4;
 
 // Column with a rounded data end and a square base.
 function columnPath(x: number, top: number, width: number, base: number): string {
-  const r = Math.min(RADIUS, width / 2, base - top);
+  'worklet';
+  const r = Math.min(RADIUS, width / 2, Math.max(0, base - top));
   return [
     `M${x},${base}`,
     `L${x},${top + r}`,
@@ -35,6 +41,15 @@ function columnPath(x: number, top: number, width: number, base: number): string
     `L${x + width},${base}`,
     'Z',
   ].join(' ');
+}
+
+const AnimatedPath = Animated.createAnimatedComponent(Path);
+function GrowingColumn({ x, top, width, base, color, opacity, identity }: { x: number; top: number; width: number; base: number; color: string; opacity: number; identity: string }) {
+  const reduced = useReducedMotion();
+  const grow = useSharedValue(1);
+  useEffect(() => { grow.set(reduced ? 1 : 0); grow.set(withTiming(1, { duration: reduced ? 0 : 400 })); }, [identity, grow, reduced]);
+  const animatedProps = useAnimatedProps(() => ({ d: columnPath(x, base - (base - top) * grow.value, width, base) }));
+  return <AnimatedPath animatedProps={animatedProps} fill={color} opacity={opacity} />;
 }
 
 // Single-series column chart from a zero baseline. Tap or drag across to read a column.
@@ -48,6 +63,9 @@ export default function BarChart({
 }: Props) {
   const [width, setWidth] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
+  const lastSelection = useRef<number | null>(null);
+  const choose = (next: number) => { if (lastSelection.current !== next) { feedback('selection'); lastSelection.current = next; } setSelected(next); };
+
   const series = useThemeColor({}, 'chartSeries');
   const grid = useThemeColor({}, 'chartGrid');
   const axis = useThemeColor({}, 'chartAxis');
@@ -55,9 +73,7 @@ export default function BarChart({
 
   if (bars.length === 0 || bars.every((b) => b.y === 0)) {
     return (
-      <View style={[styles.empty, { height: height / 2, borderColor: grid }]}>
-        <Text style={{ color: muted }}>{emptyText}</Text>
-      </View>
+      <ChartEmpty message={emptyText} label={accessibilityLabel} />
     );
   }
 
@@ -74,7 +90,7 @@ export default function BarChart({
 
   const select = (event: GestureResponderEvent) => {
     const index = Math.floor((event.nativeEvent.locationX - PAD.left) / slot);
-    setSelected(Math.max(0, Math.min(bars.length - 1, index)));
+    choose(Math.max(0, Math.min(bars.length - 1, index)));
   };
 
   return (
@@ -88,7 +104,7 @@ export default function BarChart({
         accessible
         accessibilityLabel={accessibilityLabel}>
         {width > 0 && (
-          <Svg width={width} height={height}>
+          <ChartEntrance identity={JSON.stringify(bars)}><Svg width={width} height={height}>
             {ticks.map((tick) => (
               <Line
                 key={`g${tick}`}
@@ -105,38 +121,38 @@ export default function BarChart({
                 key={`t${tick}`}
                 x={PAD.left - 6}
                 y={toY(tick) + 4}
-                fontSize={11}
+                fontSize={FontSize.caption}
                 fill={muted}
                 textAnchor="end">
                 {compactNumber(tick)}
               </SvgText>
             ))}
 
+            {active && selected != null && <Line x1={PAD.left + (selected + 0.5) * slot} x2={PAD.left + (selected + 0.5) * slot} y1={PAD.top} y2={plotBottom} stroke={series} strokeDasharray="3 4" />}
             {bars.map((bar, i) =>
               bar.y > 0 ? (
-                <Path
+                <GrowingColumn
                   key={bar.x}
-                  d={columnPath(
-                    PAD.left + i * slot + (slot - barWidth) / 2,
-                    toY(bar.y),
-                    barWidth,
-                    plotBottom
-                  )}
-                  fill={series}
+                  identity={JSON.stringify(bars)}
+                  x={PAD.left + i * slot + (slot - barWidth) / 2}
+                  top={toY(bar.y)}
+                  width={barWidth}
+                  base={plotBottom}
+                  color={series}
                   opacity={selected == null || selected === i ? 1 : 0.4}
                 />
               ) : null
             )}
 
-            <SvgText x={PAD.left} y={height - 6} fontSize={11} fill={muted}>
+            <SvgText x={PAD.left} y={height - 6} fontSize={FontSize.caption} fill={muted}>
               {formatX(bars[0].x)}
             </SvgText>
             {bars.length > 1 && (
-              <SvgText x={plotRight} y={height - 6} fontSize={11} fill={muted} textAnchor="end">
+              <SvgText x={plotRight} y={height - 6} fontSize={FontSize.caption} fill={muted} textAnchor="end">
                 {formatX(last.x)}
               </SvgText>
             )}
-          </Svg>
+          </Svg></ChartEntrance>
         )}
         <View
           style={StyleSheet.absoluteFill}
@@ -151,14 +167,3 @@ export default function BarChart({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  empty: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-  },
-});

@@ -4,7 +4,11 @@ Visual polish tasks to finish before Forge goes public. Each prompt is self-cont
 
 Every prompt ends with the same ground rules, so it still works when pasted alone.
 
-**Status:** 1, 3, 4, 5, 8, 9 and 15 are done, and 12 is partly done (favicon and iOS dark/tinted icons; store screenshots and the Play feature graphic remain). Still open: 2, 6, 7, 10, 11, 12 (screenshots), 13, 14, 16. Reusable pieces from the finished work: `components/EmptyState.tsx`, `components/Skeleton.tsx` + `ScreenSkeletons.tsx`, `showAlert()` in `components/AlertSheet.tsx`, `components/rank/RankBadge.tsx`; `expo-haptics` is installed.
+**Implementation status (2026-11-07):** The remaining code work for 2, 6, 7, 10, 11, 13, 14 and 16 is implemented. 16 uses the phone-only launch option. 12 now has a generated Google Play feature graphic and a script that composes store screenshots from real captures; those captures remain pending because this workspace has no native emulator or attached phone. Accessibility and native gesture behavior still require device verification before release. Do not interpret bundling or contrast checks as a completed VoiceOver/TalkBack audit.
+
+Shared additions: `constants/Design.ts` (typography/spacing/radii), `MotionPressable`, `MotionRow`, `HeaderAction`, `useUnsavedChanges`, `useFeedback`, and the components in `components/nutrition/`. `npm run check:design` checks typography-token use and dark-theme text contrast. All haptics go through the saved Settings preference. Release database initialization no longer seeds demo history; development builds still do.
+
+See [polish verification](polish-verification.md) for evidence and remaining device checks, and [store assets](store-assets.md) for the capture workflow. The numbered prompts below are retained as the original task specifications, so their descriptions of the old code are historical.
 
 ---
 
@@ -257,7 +261,7 @@ Problem: the icon and splash were regenerated as a simple orange tilted dumbbell
 Do this:
 1. Refine the logo for small sizes (check it legibly at 29, 40 and 60 pt; consider a slightly thicker bar and fewer plates), keeping it original. Update the generator script rather than hand-editing PNGs, so the assets stay reproducible.
 2. Add iOS dark and tinted icon variants using the app.json fields documented for SDK 58 (check https://docs.expo.dev/versions/v58.0.0/config/app/ for the exact keys), regenerate the favicon, and verify the Android adaptive foreground stays inside the safe zone.
-3. Add a script that captures or composes store screenshots for the required sizes (6.9" and 6.5" iPhone, 13" iPad if tablets stay supported, Android phone), framed with a short caption on the brand background: Home with recovery body, workout logger, strength rank, nutrition, progress charts. Use realistic sample data (db/sampleData.ts), not empty screens.
+3. Add a script that captures or composes store screenshots for the required sizes (6.9" and 6.5" iPhone, 13" iPad if tablets stay supported, Android phone), framed with a short caption on the brand background: Home with recovery body, workout logger, strength rank, nutrition, progress charts. Use realistic data, not empty screens.
 4. Produce a 1024 × 500 Google Play feature graphic.
 
 Done when: every icon slot in app.json points to a real, sharp asset, and a folder of store-ready screenshots exists.
@@ -348,5 +352,5 @@ Ground rules: read the matching SDK 58 docs before touching Expo APIs; add packa
 
 ### Not visual, but needed before release
 
-- Remove the test data: delete `db/sampleData.ts` and its call in `db/init.ts`.
+- Demo data is now gated by `__DEV__` in `db/init.ts`; verify a fresh release build starts with empty logs. Existing development installs keep their test history.
 - Re-check the fast-food and meal nutrition values in `db/seedFoods.ts` against the chains' current published data.

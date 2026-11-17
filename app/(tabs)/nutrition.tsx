@@ -1,9 +1,13 @@
+import { FontSize, FontWeight, Space } from '@/constants/Design';
+import CalorieRing from '@/components/nutrition/CalorieRing';
+import DateStrip from '@/components/nutrition/DateStrip';
+import MacroPills from '@/components/nutrition/MacroPills';
+import { ProgressSkeleton } from '@/components/ScreenSkeletons';
 import { Link, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 
-import IconButton from '@/components/IconButton';
 import PressableLink from '@/components/PressableLink';
 import ProgressBar from '@/components/ProgressBar';
 import { Text, View, useThemeColor } from '@/components/Themed';
@@ -17,10 +21,10 @@ import {
   type LoggedFood,
   type Nutrients,
 } from '@/db/nutrition';
-import { fromDateKey, shiftDateKey, toDateKey } from '@/db/records';
+import { toDateKey } from '@/db/records';
 import { getNutritionTargets, type NutritionTargets } from '@/db/settings';
 import type { Meal } from '@/db/types';
-import { formatAmount, formatCalories, formatDay, formatNumber } from '@/lib/format';
+import { formatAmount, formatCalories, formatNumber } from '@/lib/format';
 
 export default function NutritionScreen() {
   const db = useSQLiteContext();
@@ -45,31 +49,13 @@ export default function NutritionScreen() {
     }, [db, date])
   );
 
-  const today = toDateKey();
   const totals = sumNutrients((entries ?? []).map(entryTotals));
+
+  if (!targets || !entries) return <ProgressSkeleton />;
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.dayRow}>
-        <IconButton
-          ios="chevron.left"
-          material="chevron_left"
-          label="Previous day"
-          color="tint"
-          onPress={() => setDate((d) => shiftDateKey(d, -1))}
-        />
-        <Pressable onPress={() => setDate(today)} disabled={date === today} hitSlop={8}>
-          <Text style={styles.dayLabel}>{formatDay(fromDateKey(date).getTime())}</Text>
-        </Pressable>
-        <IconButton
-          ios="chevron.right"
-          material="chevron_right"
-          label="Next day"
-          color="tint"
-          onPress={() => setDate((d) => shiftDateKey(d, 1))}
-          disabled={date >= today}
-        />
-      </View>
+      <DateStrip date={date} onChange={(next) => { setEntries(null); setDate(next); }} />
 
       {targets && <Summary totals={totals} targets={targets} />}
 
@@ -96,9 +82,7 @@ export default function NutritionScreen() {
 
 function Summary({ totals, targets }: { totals: Nutrients; targets: NutritionTargets }) {
   const muted = useThemeColor({}, 'muted');
-  const danger = useThemeColor({}, 'danger');
 
-  const remaining = targets.calories != null ? targets.calories - totals.calories : null;
 
   return (
     <Card style={styles.summary}>
@@ -108,42 +92,28 @@ function Summary({ totals, targets }: { totals: Nutrients; targets: NutritionTar
           <TextAction label="Edit goals" accessibilityLabel="Edit nutrition goals and units" />
         </Link>
       </View>
-      <View style={styles.calorieRow}>
-        <Text style={styles.calories}>
-          {formatCalories(totals.calories)}
-          <Text style={[styles.caloriesUnit, { color: muted }]}>
-            {targets.calories != null ? ` / ${formatCalories(targets.calories)} kcal` : ' kcal'}
-          </Text>
-        </Text>
-        {remaining != null && (
-          <Text style={[styles.remaining, { color: remaining < 0 ? danger : muted }]}>
-            {remaining >= 0
-              ? `${formatCalories(remaining)} left`
-              : `${formatCalories(-remaining)} over`}
-          </Text>
-        )}
-      </View>
-      {targets.calories != null && <ProgressBar value={totals.calories} max={targets.calories} />}
+      <CalorieRing eaten={totals.calories} target={targets.calories} />
 
       <View style={styles.macros}>
-        <Macro label="Protein" value={totals.proteinG} target={targets.proteinG} />
-        <Macro label="Carbs" value={totals.carbsG} target={targets.carbsG} />
-        <Macro label="Fat" value={totals.fatG} target={targets.fatG} />
+        <Macro colorToken="protein" label="Protein" value={totals.proteinG} target={targets.proteinG} />
+        <Macro colorToken="carbs" label="Carbs" value={totals.carbsG} target={targets.carbsG} />
+        <Macro colorToken="fat" label="Fat" value={totals.fatG} target={targets.fatG} />
       </View>
     </Card>
   );
 }
 
-function Macro({ label, value, target }: { label: string; value: number; target: number | null }) {
+function Macro({ label, value, target, colorToken }: { label: string; value: number; target: number | null; colorToken: 'protein' | 'carbs' | 'fat' }) {
+  const color = useThemeColor({}, colorToken);
   const muted = useThemeColor({}, 'muted');
   return (
     <View style={styles.macro}>
-      <Text style={[styles.macroLabel, { color: muted }]}>{label}</Text>
+      <Text style={[styles.macroLabel, { color }]}>{label}</Text>
       <Text style={styles.macroValue}>
         {formatNumber(value)}
         <Text style={{ color: muted }}>{target != null ? ` / ${formatNumber(target)} g` : ' g'}</Text>
       </Text>
-      {target != null && <ProgressBar value={value} max={target} height={5} />}
+      {target != null && <ProgressBar value={value} max={target} height={5} color={color} />}
     </View>
   );
 }
@@ -193,11 +163,8 @@ function MealSection({
             ]}>
               <View style={styles.entryText}>
                 <Text style={styles.entryName}>{entry.name}</Text>
-                <Text style={[styles.entryDetail, { color: muted }]}>
-                  {formatAmount(entry.servings, entry.servingLabel, entry.servingGrams)} · P{' '}
-                  {formatNumber(totals.proteinG)} · C {formatNumber(totals.carbsG)} · F{' '}
-                  {formatNumber(totals.fatG)}
-                </Text>
+                <Text style={[styles.entryDetail, { color: muted }]}>{formatAmount(entry.servings, entry.servingLabel, entry.servingGrams)}</Text>
+                <MacroPills values={totals} />
               </View>
               <Text style={styles.entryCalories}>{formatCalories(totals.calories)}</Text>
           </PressableLink>
@@ -212,24 +179,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: 16,
-    paddingTop: 4,
-    gap: 14,
-    paddingBottom: 40,
-  },
-  dayRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 4,
-  },
-  dayLabel: {
-    fontSize: 17,
-    fontWeight: '800',
+    padding: Space.lg,
+    paddingTop: Space.xs,
+    gap: Space.lg,
+    paddingBottom: Space.bottom,
   },
   eyebrow: {
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: FontSize.caption,
+    fontWeight: FontWeight.bold,
     letterSpacing: 1,
   },
   summaryHeader: {
@@ -238,91 +195,73 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   summary: {
-    gap: 12,
-  },
-  calorieRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'space-between',
-    gap: 8,
-    marginTop: -8,
-  },
-  calories: {
-    fontSize: 34,
-    fontWeight: '800',
-    fontVariant: ['tabular-nums'],
-  },
-  caloriesUnit: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  remaining: {
-    fontSize: 15,
-    fontWeight: '700',
+    gap: Space.md,
   },
   macros: {
+    flexWrap: 'wrap',
     flexDirection: 'row',
-    gap: 16,
-    marginTop: 4,
+    gap: Space.lg,
+    marginTop: Space.xs,
   },
   macro: {
-    flex: 1,
-    gap: 4,
+    flexGrow: 1,
+    flexBasis: 90,
+    gap: Space.xs,
   },
   macroLabel: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: FontSize.caption,
+    fontWeight: FontWeight.semibold,
   },
   macroValue: {
-    fontSize: 15,
-    fontWeight: '800',
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.heavy,
   },
   meal: {
-    paddingVertical: 12,
+    paddingVertical: Space.md,
   },
   mealHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingBottom: 6,
+    gap: Space.md,
+    paddingBottom: Space.sm,
   },
   mealHeading: {
     flex: 1,
   },
   mealTitle: {
-    fontSize: 18,
-    fontWeight: '800',
+    fontSize: FontSize.headline,
+    fontWeight: FontWeight.heavy,
   },
   mealCalories: {
-    fontSize: 13,
-    fontWeight: '500',
+    fontSize: FontSize.caption,
+    fontWeight: FontWeight.medium,
   },
   entry: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
-    gap: 12,
+    paddingVertical: Space.md,
+    gap: Space.md,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
   entryText: {
     flex: 1,
   },
   entryName: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: FontSize.headline,
+    fontWeight: FontWeight.semibold,
   },
   entryDetail: {
-    fontSize: 13,
-    marginTop: 2,
+    fontSize: FontSize.caption,
+    marginTop: Space.micro,
   },
   entryCalories: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: FontSize.headline,
+    fontWeight: FontWeight.bold,
     fontVariant: ['tabular-nums'],
   },
   hint: {
     textAlign: 'center',
-    fontSize: 14,
+    fontSize: FontSize.body,
   },
   pressed: {
     opacity: 0.6,

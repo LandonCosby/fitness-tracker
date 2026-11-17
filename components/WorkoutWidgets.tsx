@@ -1,3 +1,5 @@
+import { FontSize, FontWeight, Radius, Space } from '@/constants/Design';
+import { feedback } from '@/hooks/useFeedback';
 import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useState } from 'react';
@@ -37,6 +39,7 @@ export function useStartWorkout(active: ActiveSession) {
     if (starting) return;
     setStarting(true);
     try {
+      feedback('medium');
       const sessionId = await startSession(db, workoutId, unit);
       router.push(sessionHref(sessionId));
     } finally {
@@ -113,56 +116,56 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   activeCard: {
-    borderRadius: 18,
-    padding: 18,
+    borderRadius: Radius.card,
+    padding: Space.lg,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: Space.md,
   },
   activeText: {
     flex: 1,
-    gap: 2,
+    gap: Space.micro,
   },
   activeLabel: {
-    fontSize: 11,
-    fontWeight: '800',
+    fontSize: FontSize.caption,
+    fontWeight: FontWeight.heavy,
     letterSpacing: 1,
     opacity: 0.8,
   },
   activeName: {
-    fontSize: 20,
-    fontWeight: '800',
+    fontSize: FontSize.title,
+    fontWeight: FontWeight.heavy,
   },
   activeRight: {
     alignItems: 'flex-end',
   },
   activeTime: {
-    fontSize: 22,
-    fontWeight: '800',
+    fontSize: FontSize.title,
+    fontWeight: FontWeight.heavy,
     fontVariant: ['tabular-nums'],
   },
   activeResume: {
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.bold,
   },
   stats: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
+    paddingVertical: Space.lg,
   },
   stat: {
     flex: 1,
     alignItems: 'center',
-    gap: 2,
+    gap: Space.micro,
   },
   statValue: {
-    fontSize: 22,
-    fontWeight: '800',
+    fontSize: FontSize.title,
+    fontWeight: FontWeight.heavy,
     fontVariant: ['tabular-nums'],
   },
   statLabel: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: FontSize.caption,
+    fontWeight: FontWeight.semibold,
   },
   divider: {
     width: StyleSheet.hairlineWidth,
